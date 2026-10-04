@@ -1,0 +1,31 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>3D Hero Preview</title>
+<link rel="stylesheet" href="assets/hero-3d.css">
+<style>
+  body { margin: 0; padding: 2rem; background: #0b0b0d; font-family: -apple-system, "Segoe UI", sans-serif; }
+</style>
+</head>
+<body>
+  <div class="hero-3d" data-hero-3d data-accent="#cfd4dc" data-auto-spin="true"
+       style="--hero-3d-bg:#000; --hero-3d-text:#fff; --hero-3d-accent:#cfd4dc; --hero-3d-height:620px;">
+    <canvas class="hero-3d__canvas" data-hero-3d-canvas></canvas>
+    <div class="hero-3d__content">
+      <p class="hero-3d__eyebrow">Digital downloads</p>
+      <h2 class="hero-3d__heading">Interactive 3D</h2>
+      <div class="hero-3d__text"><p>Bring your UI to life with beautiful 3D scenes. Create immersive experiences that capture attention and enhance your design.</p></div>
+      <div class="hero-3d__actions">
+        <a class="hero-3d__button hero-3d__button--primary" href="#" data-hero-3d-cta>Browse products</a>
+        <a class="hero-3d__button" href="#" data-hero-3d-cta>How it works</a>
+      </div>
+      <ul class="hero-3d__badges">
+        <li>Instant download</li><li>Lifetime access</li><li>Secure checkout</li>
+      </ul>
+    </div>
+  </div>
+  <script type="module" src="assets/hero-3d.js"></script>
+</body>
+</html>

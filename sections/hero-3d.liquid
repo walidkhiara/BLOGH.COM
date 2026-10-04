@@ -1,0 +1,125 @@
+{{ 'hero-3d.css' | asset_url | stylesheet_tag }}
+<script type="module" src="{{ 'hero-3d.js' | asset_url }}" defer></script>
+
+{%- liquid
+  assign primary_url = section.settings.primary_url
+  if primary_url == blank and section.settings.featured_product != blank
+    assign primary_url = section.settings.featured_product.url
+  endif
+  if primary_url == blank
+    assign primary_url = routes.all_products_collection_url
+  endif
+-%}
+
+<div
+  class="hero-3d"
+  data-hero-3d
+  data-accent="{{ section.settings.accent_color }}"
+  data-auto-spin="{{ section.settings.auto_spin }}"
+  {% if section.settings.model_file != blank %}data-model-url="{{ section.settings.model_file }}"{% endif %}
+  style="
+    --hero-3d-bg: {{ section.settings.background_color }};
+    --hero-3d-text: {{ section.settings.text_color }};
+    --hero-3d-accent: {{ section.settings.accent_color }};
+    --hero-3d-height: {{ section.settings.height }}px;
+    --hero-3d-radius: {{ section.settings.corner_radius }}px;
+  "
+>
+  <canvas class="hero-3d__canvas" data-hero-3d-canvas></canvas>
+
+  <div class="hero-3d__content">
+    {%- if section.settings.eyebrow != blank -%}
+      <p class="hero-3d__eyebrow">{{ section.settings.eyebrow | escape }}</p>
+    {%- endif -%}
+
+    <h2 class="hero-3d__heading">{{ section.settings.heading | escape }}</h2>
+
+    {%- if section.settings.text != blank -%}
+      <div class="hero-3d__text">{{ section.settings.text }}</div>
+    {%- endif -%}
+
+    <div class="hero-3d__actions">
+      {%- if section.settings.primary_label != blank -%}
+        <a class="hero-3d__button hero-3d__button--primary" href="{{ primary_url }}" data-hero-3d-cta>
+          {{ section.settings.primary_label | escape }}
+          {%- if section.settings.show_price and section.settings.featured_product != blank -%}
+            &nbsp;— {{ section.settings.featured_product.price | money }}
+          {%- endif -%}
+        </a>
+      {%- endif -%}
+
+      {%- if section.settings.secondary_label != blank -%}
+        <a class="hero-3d__button" href="{{ section.settings.secondary_url | default: routes.all_products_collection_url }}" data-hero-3d-cta>
+          {{ section.settings.secondary_label | escape }}
+        </a>
+      {%- endif -%}
+    </div>
+
+    {%- if section.blocks.size > 0 -%}
+      <ul class="hero-3d__badges">
+        {%- for block in section.blocks -%}
+          <li {{ block.shopify_attributes }}>{{ block.settings.label | escape }}</li>
+        {%- endfor -%}
+      </ul>
+    {%- endif -%}
+  </div>
+</div>
+
+{% schema %}
+{
+  "name": "3D hero",
+  "tag": "section",
+  "class": "section-hero-3d",
+  "settings": [
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Digital downloads" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Interactive 3D" },
+    {
+      "type": "richtext",
+      "id": "text",
+      "label": "Text",
+      "default": "<p>Bring your UI to life with beautiful 3D scenes. Create immersive experiences that capture attention and enhance your design.</p>"
+    },
+    { "type": "header", "content": "Buttons" },
+    { "type": "text", "id": "primary_label", "label": "Primary button label", "default": "Browse products" },
+    { "type": "url", "id": "primary_url", "label": "Primary button link" },
+    { "type": "product", "id": "featured_product", "label": "Featured product", "info": "Used for the primary link and price when no link is set." },
+    { "type": "checkbox", "id": "show_price", "label": "Show featured product price", "default": true },
+    { "type": "text", "id": "secondary_label", "label": "Secondary button label", "default": "How it works" },
+    { "type": "url", "id": "secondary_url", "label": "Secondary button link" },
+    { "type": "header", "content": "3D scene" },
+    {
+      "type": "text",
+      "id": "model_file",
+      "label": "Custom .glb model URL",
+      "info": "Optional. Upload a .glb in Content > Files and paste its URL. Leave empty to use the built-in chrome figure."
+    },
+    { "type": "checkbox", "id": "auto_spin", "label": "Auto-rotate", "default": true },
+    { "type": "header", "content": "Appearance" },
+    { "type": "color", "id": "background_color", "label": "Background", "default": "#000000" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#ffffff" },
+    { "type": "color", "id": "accent_color", "label": "Accent", "default": "#cfd4dc" },
+    { "type": "range", "id": "height", "label": "Height", "min": 420, "max": 900, "step": 20, "unit": "px", "default": 620 },
+    { "type": "range", "id": "corner_radius", "label": "Corner radius", "min": 0, "max": 40, "step": 2, "unit": "px", "default": 18 }
+  ],
+  "blocks": [
+    {
+      "type": "badge",
+      "name": "Badge",
+      "limit": 4,
+      "settings": [
+        { "type": "text", "id": "label", "label": "Label", "default": "Instant download" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "3D hero",
+      "blocks": [
+        { "type": "badge", "settings": { "label": "Instant download" } },
+        { "type": "badge", "settings": { "label": "Lifetime access" } },
+        { "type": "badge", "settings": { "label": "Secure checkout" } }
+      ]
+    }
+  ]
+}
+{% endschema %}
