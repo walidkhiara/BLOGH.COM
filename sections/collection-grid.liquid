@@ -1,0 +1,109 @@
+{%- comment -%}
+  Collection grid.
+  Each block picks a collection in the theme editor; the card title, image and
+  link are read live from Shopify, so renaming a collection in the admin
+  updates the storefront with no theme edit.
+{%- endcomment -%}
+
+{%- style -%}
+  .collection-grid-{{ section.id }} {
+    background: {{ section.settings.background_color }};
+    color: {{ section.settings.text_color }};
+    padding: {{ section.settings.padding_top }}px 20px {{ section.settings.padding_bottom }}px;
+  }
+  .collection-grid__inner { max-width: 1200px; margin: 0 auto; }
+  .collection-grid__heading { margin: 0 0 24px; font-size: 1.75rem; }
+  .collection-grid__list {
+    display: grid;
+    gap: 20px;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  .collection-grid__card {
+    display: block;
+    color: inherit;
+    text-decoration: none;
+    border-radius: {{ section.settings.corner_radius }}px;
+    overflow: hidden;
+    background: rgba(127, 127, 127, 0.08);
+  }
+  .collection-grid__media { display: block; width: 100%; aspect-ratio: 1 / 1; object-fit: cover; }
+  .collection-grid__placeholder { aspect-ratio: 1 / 1; }
+  .collection-grid__placeholder svg { width: 100%; height: 100%; }
+  .collection-grid__title { margin: 0; padding: 14px 16px; font-size: 1rem; }
+  .collection-grid__count { display: block; opacity: 0.7; font-size: 0.85rem; font-weight: 400; margin-top: 4px; }
+{%- endstyle -%}
+
+<section class="collection-grid collection-grid-{{ section.id }}">
+  <div class="collection-grid__inner">
+    {%- if section.settings.heading != blank -%}
+      <h2 class="collection-grid__heading">{{ section.settings.heading | escape }}</h2>
+    {%- endif -%}
+
+    <ul class="collection-grid__list">
+      {%- for block in section.blocks -%}
+        {%- assign collection = block.settings.collection -%}
+        {%- if collection != blank -%}
+          <li {{ block.shopify_attributes }}>
+            <a class="collection-grid__card" href="{{ collection.url }}">
+              {%- if collection.featured_image -%}
+                <img
+                  class="collection-grid__media"
+                  src="{{ collection.featured_image | image_url: width: 600 }}"
+                  alt="{{ collection.featured_image.alt | default: collection.title | escape }}"
+                  width="600"
+                  height="600"
+                  loading="lazy"
+                >
+              {%- else -%}
+                <div class="collection-grid__placeholder">
+                  {{ 'collection-apparel-1' | placeholder_svg_tag }}
+                </div>
+              {%- endif -%}
+              <h3 class="collection-grid__title">
+                {{ collection.title | escape }}
+                {%- if section.settings.show_product_count -%}
+                  <span class="collection-grid__count">{{ collection.all_products_count }} products</span>
+                {%- endif -%}
+              </h3>
+            </a>
+          </li>
+        {%- endif -%}
+      {%- endfor -%}
+    </ul>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Collection grid",
+  "tag": "section",
+  "settings": [
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Shop by collection" },
+    { "type": "checkbox", "id": "show_product_count", "label": "Show product count", "default": false },
+    { "type": "color", "id": "background_color", "label": "Background", "default": "#000000" },
+    { "type": "color", "id": "text_color", "label": "Text", "default": "#ffffff" },
+    { "type": "range", "id": "corner_radius", "label": "Corner radius", "min": 0, "max": 40, "step": 2, "unit": "px", "default": 18 },
+    { "type": "range", "id": "padding_top", "label": "Top padding", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 48 },
+    { "type": "range", "id": "padding_bottom", "label": "Bottom padding", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 48 }
+  ],
+  "blocks": [
+    {
+      "type": "collection",
+      "name": "Collection",
+      "limit": 12,
+      "settings": [
+        { "type": "collection", "id": "collection", "label": "Collection" }
+      ]
+    }
+  ],
+  "presets": [
+    {
+      "name": "Collection grid",
+      "blocks": [{ "type": "collection" }, { "type": "collection" }, { "type": "collection" }]
+    }
+  ]
+}
+{% endschema %}
