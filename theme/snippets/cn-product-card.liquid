@@ -1,0 +1,41 @@
+{%- assign img = p.featured_image -%}
+<a href="{{ p.url }}" class="cn-card">
+  <span class="cn-card__media">
+    {%- if img -%}
+      <img src="{{ img | image_url: width: 700 }}" srcset="{{ img | image_url: width: 400 }} 400w, {{ img | image_url: width: 700 }} 700w, {{ img | image_url: width: 1000 }} 1000w" sizes="(max-width: 700px) 46vw, (max-width: 1000px) 31vw, 23vw" alt="{{ img.alt | default: p.title | escape }}" width="{{ img.width }}" height="{{ img.height }}" loading="lazy" decoding="async" class="cn-card__img">
+    {%- else -%}
+      <span class="cn-card__empty" aria-hidden="true"></span>
+    {%- endif -%}
+    {%- if p.available == false -%}
+      <span class="cn-card__tag">Sold out</span>
+    {%- elsif p.compare_at_price_max > p.price -%}
+      <span class="cn-card__tag cn-card__tag--sale">Sale</span>
+    {%- endif -%}
+  </span>
+  <span class="cn-card__label">
+    <span class="cn-card__title">{{ p.title | truncate: 60 }}</span>
+    <span class="cn-card__price">
+      {%- if p.compare_at_price_max > p.price -%}<s>{{ p.compare_at_price_max | money }}</s>{%- endif -%}
+      <b>{{ p.price_min | money }}</b>
+    </span>
+  </span>
+</a>
+
+{% stylesheet %}
+  .cn-card { position: relative; display: flex; flex-direction: column; overflow: hidden; border-radius: 10px; text-decoration: none; color: #1e1a16; background: #fbf8f2; border: 1px solid rgba(120,100,70,.2); box-shadow: 0 4px 18px rgba(120,100,70,.1); transition: transform .4s cubic-bezier(.16,1,.3,1), box-shadow .4s ease; }
+  .cn-card:hover, .cn-card:focus-visible { transform: translateY(-5px); box-shadow: 0 18px 40px rgba(120,100,70,.22); }
+  .cn-card:focus-visible { outline: 2px solid #1e1a16; outline-offset: 3px; }
+  .cn-card__media { position: relative; display: block; aspect-ratio: 3 / 4; overflow: hidden; background: #ede5d8; }
+  .cn-card__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: center top; transition: transform .6s cubic-bezier(.16,1,.3,1); }
+  .cn-card:hover .cn-card__img { transform: scale(1.04); }
+  .cn-card__empty { position: absolute; inset: 0; background: linear-gradient(135deg, #e8ddd0, #d4c4ae); }
+  .cn-card__label { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px 18px; background: #fbf8f2; }
+  .cn-card__title { font: 600 16px/1.3 var(--font-body--family, 'Inter'), -apple-system, 'Segoe UI', sans-serif; letter-spacing: .01em; color: #1e1a16; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .cn-card__price { font: 500 15px/1.2 var(--font-body--family, 'Inter'), -apple-system, sans-serif; color: #5f5240; }
+  .cn-card__price b { font-weight: 800; font-size: 19px; color: #1e1a16; }
+  .cn-card__price s { margin-right: 8px; color: #8a7b66; }
+  .cn-card__tag { position: absolute; top: 12px; left: 12px; z-index: 3; padding: 6px 12px; border-radius: 999px; background: #1e1a16; color: #f5f0e8; font: 800 10px/1 var(--font-body--family, 'Inter'), sans-serif; letter-spacing: .14em; text-transform: uppercase; }
+  .cn-card__tag--sale { background: #7a2e2e; }
+  @media (max-width: 700px) { .cn-card__label { padding: 11px 12px 14px; } .cn-card__title { font-size: 14px; } .cn-card__price b { font-size: 17px; } }
+  @media (prefers-reduced-motion: reduce) { .cn-card, .cn-card__img { transition: none; } .cn-card:hover { transform: none; } }
+{% endstylesheet %}

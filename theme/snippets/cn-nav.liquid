@@ -1,0 +1,47 @@
+{%- comment -%}
+  Glass navigation for pages that do not have their own (cart, search, blog, pages, 404).
+  The home, collection and product templates ship their own glass bars, so theme.liquid skips this there.
+{%- endcomment -%}
+<header class="cn-gnav" role="banner">
+  <a class="cn-gnav__brand" href="{{ routes.root_url }}">{{ shop.name }}</a>
+  <nav class="cn-gnav__links" aria-label="Primary">
+    <a href="{{ routes.root_url }}">Home</a>
+    <a href="{{ routes.all_products_collection_url }}">Shop</a>
+    <a href="{{ routes.search_url }}">Search</a>
+  </nav>
+  <a class="cn-gnav__bag" href="{{ routes.cart_url }}" aria-label="Bag, {{ cart.item_count }} items">
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+    <span class="cn-gnav__count"{% if cart.item_count == 0 %} hidden{% endif %}>{{ cart.item_count }}</span>
+  </a>
+</header>
+
+{% stylesheet %}
+  .cn-gnav {
+    position: sticky; top: 0; z-index: 60;
+    display: flex; align-items: center; justify-content: space-between; gap: 24px;
+    height: 60px; padding: 0 clamp(16px, 4vw, 40px);
+    background: linear-gradient(160deg, rgba(255, 255, 255, 0.78) 0%, rgba(245, 240, 232, 0.72) 60%, rgba(232, 221, 208, 0.78) 100%);
+    -webkit-backdrop-filter: blur(24px) saturate(1.8);
+    backdrop-filter: blur(24px) saturate(1.8);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.8);
+    box-shadow: 0 8px 32px rgba(120, 100, 70, 0.14), 0 1px 0 rgba(255, 255, 255, 0.9) inset;
+    font-family: var(--font-body--family, 'Inter'), -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  .cn-gnav a { color: #1e1a16; text-decoration: none; }
+  .cn-gnav__brand { font-size: 12px; font-weight: 800; letter-spacing: 0.4em; text-transform: uppercase; white-space: nowrap; }
+  .cn-gnav__links { display: flex; gap: clamp(14px, 3vw, 32px); margin-inline: auto; }
+  .cn-gnav__links a { font-size: 11px; font-weight: 700; letter-spacing: 0.22em; text-transform: uppercase; padding: 8px 2px; border-bottom: 1px solid transparent; }
+  .cn-gnav__links a:hover { border-bottom-color: #1e1a16; }
+  .cn-gnav__bag { position: relative; display: inline-flex; align-items: center; padding: 8px; }
+  .cn-gnav__count {
+    position: absolute; top: 0; right: -2px; min-width: 18px; height: 18px; padding: 0 5px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border-radius: 999px; background: #1e1a16; color: #f5f0e8; font-size: 10px; font-weight: 800;
+  }
+  .cn-gnav__count[hidden] { display: none; }
+  @media (max-width: 520px) {
+    .cn-gnav__brand { letter-spacing: 0.24em; font-size: 11px; }
+    .cn-gnav__links { gap: 12px; }
+    .cn-gnav__links a:first-child { display: none; }
+  }
+{% endstylesheet %}

@@ -1,0 +1,19 @@
+{%- assign c = collections[handle] -%}
+{%- if c != blank and c.products_count > 0 -%}
+{%- comment -%}
+  The heading is read from the live collection, not from a hardcoded string.
+  Rename the collection in the Shopify admin and this heading updates with it.
+{%- endcomment -%}
+<section class="cat-row{% if alt %} cat-row--alt{% endif %}" id="row-{{ handle }}">
+  <div class="cat-inner">
+    <p class="cat-eye">{{ eyebrow }}</p>
+    <h2 class="cat-heading">{{ c.title }}</h2>
+    <div class="cat-grid">
+      {%- for p in c.products limit: 8 -%}
+        {%- render 'cn-product-card', p: p -%}
+      {%- endfor -%}
+    </div>
+    <div class="cat-cta-wrap"><a href="{{ c.url }}" class="cat-cta">View All</a></div>
+  </div>
+</section>
+{%- endif -%}

@@ -1,0 +1,132 @@
+{% comment %}
+  Glass cart drawer using Shopify's Ajax Cart API.
+  Include once near end of layout/theme.liquid, just before </body>:
+    {% render 'cart-drawer-glass' %}
+{% endcomment %}
+<div id="cart-drawer" class="cdg-drawer" aria-hidden="true">
+  <div class="cdg-backdrop" data-cart-close></div>
+  <div class="cdg-panel" role="dialog" aria-label="Shopping cart">
+    <div class="cdg-header">
+      <h2>Your Bag</h2>
+      <button type="button" class="cdg-close" data-cart-close aria-label="Close cart">&times;</button>
+    </div>
+    <div class="cdg-items" data-cart-items>
+      {% if cart.item_count == 0 %}
+        <p class="cdg-empty">Your bag is empty.</p>
+      {% else %}
+        {% for item in cart.items %}
+          <div class="cdg-item" data-line="{{ forloop.index }}">
+            <img src="{{ item.image | image_url: width: 160 }}" alt="{{ item.title | escape }}" class="cdg-item-img">
+            <div class="cdg-item-info">
+              <div class="cdg-item-title">{{ item.product.title }}</div>
+              <div class="cdg-item-variant">{{ item.variant.title }}</div>
+              <div class="cdg-item-row">
+                <input type="number" min="0" value="{{ item.quantity }}" class="cdg-qty" data-key="{{ item.key }}">
+                <span class="cdg-item-price">{{ item.final_line_price | money }}</span>
+              </div>
+            </div>
+            <button type="button" class="cdg-remove" data-key="{{ item.key }}" aria-label="Remove">&times;</button>
+          </div>
+        {% endfor %}
+      {% endif %}
+    </div>
+    <div class="cdg-footer">
+      <div class="cdg-subtotal">
+        <span>Subtotal</span>
+        <span data-cart-subtotal>{{ cart.total_price | money }}</span>
+      </div>
+      <a href="/checkout" class="cdg-checkout-btn">Checkout</a>
+    </div>
+  </div>
+</div>
+
+<style>
+  .cdg-drawer{position:fixed;inset:0;z-index:100;pointer-events:none;}
+  .cdg-drawer[aria-hidden="false"]{pointer-events:auto;}
+  .cdg-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.5);opacity:0;transition:opacity .25s ease;}
+  .cdg-drawer[aria-hidden="false"] .cdg-backdrop{opacity:1;}
+  .cdg-panel{position:absolute;top:0;right:0;height:100%;width:min(420px,92vw);background:rgba(18,20,24,.78);backdrop-filter:blur(18px);-webkit-backdrop-filter:blur(18px);border-left:1px solid rgba(255,255,255,.1);display:flex;flex-direction:column;transform:translateX(100%);transition:transform .3s ease;}
+  .cdg-drawer[aria-hidden="false"] .cdg-panel{transform:translateX(0);}
+  .cdg-header{display:flex;justify-content:space-between;align-items:center;padding:20px;border-bottom:1px solid rgba(255,255,255,.08);}
+  .cdg-header h2{margin:0;font-size:16px;letter-spacing:1px;text-transform:uppercase;color:#F3F5F6;}
+  .cdg-close{background:none;border:none;color:#F3F5F6;font-size:24px;cursor:pointer;line-height:1;}
+  .cdg-items{flex:1;overflow-y:auto;padding:16px 20px;}
+  .cdg-empty{color:#9aa0a4;text-align:center;margin-top:40px;}
+  .cdg-item{display:flex;gap:12px;padding:14px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+  .cdg-item-img{width:64px;height:80px;object-fit:cover;border-radius:4px;}
+  .cdg-item-info{flex:1;}
+  .cdg-item-title{color:#F3F5F6;font-size:14px;font-weight:600;}
+  .cdg-item-variant{color:#9aa0a4;font-size:12px;margin:2px 0 8px;}
+  .cdg-item-row{display:flex;justify-content:space-between;align-items:center;}
+  .cdg-qty{width:52px;background:rgba(255,255,255,.05);border:1px solid rgba(255,255,255,.14);color:#F3F5F6;border-radius:4px;padding:4px;}
+  .cdg-item-price{color:#E7E9EA;font-size:13px;}
+  .cdg-remove{background:none;border:none;color:#9aa0a4;font-size:18px;cursor:pointer;align-self:flex-start;}
+  .cdg-footer{padding:20px;border-top:1px solid rgba(255,255,255,.08);}
+  .cdg-subtotal{display:flex;justify-content:space-between;color:#F3F5F6;font-weight:700;margin-bottom:14px;}
+  .cdg-checkout-btn{display:block;text-align:center;padding:15px;background:linear-gradient(135deg,#e7eef2,#aebcc4 45%,#e7eef2);color:#0b0c0e;font-weight:700;letter-spacing:1px;text-transform:uppercase;text-decoration:none;border-radius:4px;}
+  @media (prefers-reduced-motion: reduce){ .cdg-panel,.cdg-backdrop{transition:none;} }
+</style>
+
+<script>
+(function(){
+  var drawer = document.getElementById('cart-drawer');
+  if(!drawer) return;
+  function openDrawer(){ drawer.setAttribute('aria-hidden','false'); }
+  function closeDrawer(){ drawer.setAttribute('aria-hidden','true'); }
+  drawer.querySelectorAll('[data-cart-close]').forEach(function(el){ el.addEventListener('click', closeDrawer); });
+  document.querySelectorAll('[data-cart-trigger]').forEach(function(el){
+    el.addEventListener('click', function(e){ e.preventDefault(); openDrawer(); refreshCart(); });
+  });
+  function refreshCart(){ fetch('/cart.js').then(function(r){ return r.json(); }).then(renderCart); }
+  function renderCart(cart){
+    document.querySelectorAll('[data-cart-count]').forEach(function(el){ el.textContent = cart.item_count; });
+    var sub = drawer.querySelector('[data-cart-subtotal]');
+    if(sub) sub.textContent = formatMoney(cart.total_price);
+    var itemsEl = drawer.querySelector('[data-cart-items]');
+    if(!itemsEl) return;
+    if(cart.item_count === 0){ itemsEl.innerHTML = '<p class="cdg-empty">Your bag is empty.</p>'; return; }
+    itemsEl.innerHTML = cart.items.map(function(item){
+      return '<div class="cdg-item" data-line="' + item.key + '">' +
+        '<img src="' + item.image + '" class="cdg-item-img" alt="">' +
+        '<div class="cdg-item-info">' +
+          '<div class="cdg-item-title">' + item.product_title + '</div>' +
+          '<div class="cdg-item-variant">' + (item.variant_title || '') + '</div>' +
+          '<div class="cdg-item-row">' +
+            '<input type="number" min="0" value="' + item.quantity + '" class="cdg-qty" data-key="' + item.key + '">' +
+            '<span class="cdg-item-price">' + formatMoney(item.final_line_price) + '</span>' +
+          '</div>' +
+        '</div>' +
+        '<button type="button" class="cdg-remove" data-key="' + item.key + '">&times;</button>' +
+      '</div>';
+    }).join('');
+    bindItemEvents();
+  }
+  function formatMoney(cents){
+    return (cents/100).toLocaleString(undefined, { style: 'currency', currency: (window.Shopify && Shopify.currency && Shopify.currency.active) || 'USD' });
+  }
+  function bindItemEvents(){
+    drawer.querySelectorAll('.cdg-qty').forEach(function(input){
+      input.addEventListener('change', function(){ changeLine(input.dataset.key, parseInt(input.value, 10) || 0); });
+    });
+    drawer.querySelectorAll('.cdg-remove').forEach(function(btn){
+      btn.addEventListener('click', function(){ changeLine(btn.dataset.key, 0); });
+    });
+  }
+  bindItemEvents();
+  function changeLine(key, quantity){
+    fetch('/cart/change.js', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id: key, quantity: quantity }) })
+      .then(function(r){ return r.json(); }).then(renderCart);
+  }
+  document.addEventListener('submit', function(e){
+    var form = e.target;
+    if(!form.matches('form[action*="/cart/add"]') && !(form.querySelector && form.querySelector('[name="add"]'))) return;
+    e.preventDefault();
+    var formData = new FormData(form);
+    fetch('/cart/add.js', { method: 'POST', body: formData })
+      .then(function(r){ return r.json(); })
+      .then(function(){ refreshCart(); openDrawer(); })
+      .catch(function(){ form.submit(); });
+  });
+  window.CartDrawerGlass = { open: function(){ openDrawer(); refreshCart(); }, close: closeDrawer, refresh: refreshCart };
+})();
+</script>

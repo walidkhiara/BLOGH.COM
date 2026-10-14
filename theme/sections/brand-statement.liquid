@@ -1,0 +1,15 @@
+{% comment %} Restrained brand statement, Apple-scale. {% endcomment %}
+<section class="bst-wrap lc-fade-up">
+  <p class="bst-text">{{ section.settings.text }}</p>
+</section>
+<style>
+  .bst-wrap{max-width:860px;margin:0 auto;padding:140px 5vw;text-align:center;}
+  .bst-text{font-size:clamp(26px,3.4vw,40px);line-height:1.35;color:var(--lc-text,#171717);font-weight:600;letter-spacing:-0.5px;}
+</style>
+{% schema %}
+{
+  "name": "Brand statement",
+  "settings": [ { "type": "textarea", "id": "text", "label": "Statement", "default": "Independent streetwear, built in small batches with no compromise on fit, fabric, or finish." } ],
+  "presets": [ { "name": "Brand statement" } ]
+}
+{% endschema %}

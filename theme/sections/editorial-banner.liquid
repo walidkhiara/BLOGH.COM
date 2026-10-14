@@ -1,0 +1,58 @@
+{% comment %} Asymmetric editorial campaign, Apple-scale typography/spacing. {% endcomment %}
+<section class="eds-wrap lc-fade-up">
+  <div class="eds-grid">
+    <div class="eds-big lc-reveal">
+      {% if section.settings.image_large %}
+        {{ section.settings.image_large | image_url: width: 1800 | image_tag: loading: 'lazy', class: 'eds-img' }}
+      {% endif %}
+    </div>
+    <div class="eds-side">
+      <div class="eds-small lc-reveal">
+        {% if section.settings.image_small %}
+          {{ section.settings.image_small | image_url: width: 1000 | image_tag: loading: 'lazy', class: 'eds-img' }}
+        {% endif %}
+      </div>
+      <div class="eds-copy">
+        {% if section.settings.eyebrow != blank %}<div class="eds-eyebrow">{{ section.settings.eyebrow }}</div>{% endif %}
+        {% if section.settings.heading != blank %}<h2 class="eds-heading">{{ section.settings.heading }}</h2>{% endif %}
+        {% if section.settings.text != blank %}<p class="eds-text">{{ section.settings.text }}</p>{% endif %}
+        {% if section.settings.link_label != blank %}
+          <a href="{{ section.settings.link_url }}" class="eds-link">{{ section.settings.link_label }} ›</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<style>
+  .eds-wrap{max-width:1600px;margin:0 auto;padding:60px 5vw 140px;}
+  .eds-grid{display:grid;grid-template-columns:1.3fr 1fr;gap:28px;align-items:stretch;}
+  .eds-big,.eds-small{border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.06);}
+  .eds-big{min-height:560px;}
+  .eds-small{min-height:240px;margin-bottom:28px;}
+  .eds-img{width:100%;height:100%;object-fit:cover;display:block;}
+  .eds-side{display:flex;flex-direction:column;}
+  .eds-copy{flex:1;display:flex;flex-direction:column;justify-content:center;gap:16px;padding:12px 4px;}
+  .eds-eyebrow{font-size:13px;letter-spacing:3px;text-transform:uppercase;color:var(--lc-text-soft,#777);font-weight:600;}
+  .eds-heading{margin:0;font-size:clamp(30px,4vw,48px);font-weight:700;color:var(--lc-text,#171717);letter-spacing:-1px;line-height:1.05;}
+  .eds-text{margin:0;color:var(--lc-text-soft,#777);font-size:17px;line-height:1.6;max-width:420px;}
+  .eds-link{color:var(--lc-text,#171717);font-weight:600;font-size:16px;text-decoration:none;margin-top:4px;}
+  .eds-link:hover{text-decoration:underline;}
+  @media (max-width:860px){ .eds-grid{grid-template-columns:1fr;} .eds-big{min-height:320px;} }
+</style>
+
+{% schema %}
+{
+  "name": "Editorial banner",
+  "settings": [
+    { "type": "image_picker", "id": "image_large", "label": "Large image" },
+    { "type": "image_picker", "id": "image_small", "label": "Small image" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "The Collection" },
+    { "type": "text", "id": "heading", "label": "Heading", "default": "Designed in studio." },
+    { "type": "textarea", "id": "text", "label": "Text", "default": "Every piece is cut, fitted, and finished by hand before it ships." },
+    { "type": "text", "id": "link_label", "label": "Link label", "default": "Explore the Lookbook" },
+    { "type": "url", "id": "link_url", "label": "Link URL" }
+  ],
+  "presets": [ { "name": "Editorial banner" } ]
+}
+{% endschema %}

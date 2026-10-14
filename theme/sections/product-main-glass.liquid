@@ -1,0 +1,273 @@
+{% comment %}
+  Product (glass) v2 — light-luxury editorial layout.
+  60/65% gallery (vertical stack + lightbox) · 35/40% sticky purchase panel.
+  Real Shopify variant matching, availability, price, add-to-cart via /cart/add.js.
+{% endcomment %}
+<section class="pmg2-wrap" data-section-id="{{ section.id }}" data-product-json="{{ product | json | escape }}">
+  <div class="pmg2-grid">
+    <div class="pmg2-gallery">
+      {% if product.media.size == 0 %}
+        <div class="pmg2-media-empty">No product image yet</div>
+      {% endif %}
+      {% for media in product.media %}
+        {% if forloop.first %}
+          {% assign pmg2_loading = 'eager' %}
+          {% assign pmg2_fetchpriority = 'high' %}
+        {% else %}
+          {% assign pmg2_loading = 'lazy' %}
+          {% assign pmg2_fetchpriority = 'auto' %}
+        {% endif %}
+        <button type="button" class="pmg2-media lc-reveal" data-media-id="{{ media.id }}" data-lc-lightbox data-full="{{ media | image_url: width: 2000 }}">
+          {{ media | image_url: width: 1400 | image_tag: loading: pmg2_loading, fetchpriority: pmg2_fetchpriority }}
+        </button>
+      {% endfor %}
+    </div>
+
+    <div class="pmg2-info">
+      <div class="pmg2-sticky">
+        {% if product.vendor != blank %}<div class="pmg2-vendor">{{ product.vendor }}</div>{% endif %}
+        <h1 class="pmg2-title">{{ product.title }}</h1>
+
+        <div class="pmg2-price" data-price>
+          {% if product.selected_or_first_available_variant.compare_at_price > product.selected_or_first_available_variant.price %}
+            <span class="pmg2-price-sale" data-price-current>{{ product.selected_or_first_available_variant.price | money }}</span>
+            <span class="pmg2-price-compare" data-price-compare>{{ product.selected_or_first_available_variant.compare_at_price | money }}</span>
+          {% else %}
+            <span data-price-current>{{ product.selected_or_first_available_variant.price | money }}</span>
+            <span data-price-compare hidden></span>
+          {% endif %}
+        </div>
+
+        {% if product.description != blank %}
+          <div class="pmg2-desc">{{ product.description | strip_html | truncate: 220 }}</div>
+        {% endif %}
+
+        <form class="pmg2-form" data-product-form action="/cart/add" method="post" enctype="multipart/form-data">
+          {% unless product.has_only_default_variant %}
+            {% for option in product.options_with_values %}
+              <div class="pmg2-option" data-option-position="{{ forloop.index }}">
+                <label class="pmg2-option-label">{{ option.name }}</label>
+                <div class="pmg2-option-values">
+                  {% for value in option.values %}
+                    <button type="button"
+                      class="pmg2-swatch"
+                      data-option-position="{{ forloop.parentloop.index }}"
+                      data-value="{{ value | escape }}"
+                      aria-pressed="{% if value == option.selected_value %}true{% else %}false{% endif %}">
+                      {{ value }}
+                    </button>
+                  {% endfor %}
+                </div>
+              </div>
+            {% endfor %}
+          {% endunless %}
+
+          <input type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}" data-variant-id>
+
+          <div class="pmg2-qty-row">
+            <label for="pmg2-qty-{{ section.id }}">Qty</label>
+            <input type="number" id="pmg2-qty-{{ section.id }}" name="quantity" value="1" min="1" max="10" class="pmg2-qty-input">
+          </div>
+
+          <button type="submit" class="lc-btn-chrome pmg2-add-btn" data-add-btn {% unless product.selected_or_first_available_variant.available %}disabled{% endunless %}>
+            <span data-add-btn-label>{% if product.selected_or_first_available_variant.available %}Add to Cart{% else %}Sold Out{% endif %}</span>
+          </button>
+          <p class="pmg2-add-status" data-add-status role="status" aria-live="polite"></p>
+        </form>
+
+        <details class="pmg2-panel" open>
+          <summary>Delivery &amp; Returns</summary>
+          <div class="pmg2-panel-body">{{ section.settings.shipping_text }}</div>
+        </details>
+        {% if product.metafields.custom.materials != blank %}
+          <details class="pmg2-panel">
+            <summary>Materials &amp; Care</summary>
+            <div class="pmg2-panel-body">{{ product.metafields.custom.materials }}</div>
+          </details>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  {% if recommendations.performed and recommendations.products_count > 0 %}
+    <div class="pmg2-related lc-fade-up">
+      <h2>You May Also Like</h2>
+      <div class="pmg2-related-grid">
+        {% for rp in recommendations.products limit: 4 %}
+          <a href="{{ rp.url }}" class="pmg2-related-card">
+            {{ rp.featured_image | image_url: width: 600 | image_tag: loading: 'lazy' }}
+            <div class="pmg2-related-title">{{ rp.title }}</div>
+            <div class="pmg2-related-price">{{ rp.price | money }}</div>
+          </a>
+        {% endfor %}
+      </div>
+    </div>
+  {% endif %}
+</section>
+
+<style>
+  .pmg2-wrap{max-width:1480px;margin:0 auto;padding:32px 5vw 90px;background:var(--lc-bg,#F7F6F2);}
+  .pmg2-grid{display:grid;grid-template-columns:62% 1fr;gap:56px;align-items:start;}
+  .pmg2-gallery{display:flex;flex-direction:column;gap:14px;}
+  .pmg2-media{display:block;width:100%;padding:0;border:none;background:var(--lc-surface,#fff);border-radius:4px;cursor:zoom-in;}
+  .pmg2-media img{transition:transform .5s var(--lc-ease-fast,ease);}
+  .pmg2-media:hover img{transform:scale(1.015);}
+  .pmg2-media-empty{aspect-ratio:3/4;background:#eee;border-radius:4px;display:flex;align-items:center;justify-content:center;color:var(--lc-text-soft,#777);}
+
+  .pmg2-info{position:relative;}
+  .pmg2-sticky{position:sticky;top:24px;display:flex;flex-direction:column;gap:16px;}
+  .pmg2-vendor{font-size:11px;letter-spacing:2.5px;text-transform:uppercase;color:var(--lc-text-soft,#777);}
+  .pmg2-title{margin:0;font-size:clamp(24px,2.8vw,34px);font-weight:600;color:var(--lc-text,#171717);letter-spacing:-0.3px;line-height:1.15;}
+  .pmg2-price{font-size:18px;display:flex;gap:10px;align-items:baseline;color:var(--lc-text,#171717);}
+  .pmg2-price-sale{font-weight:700;}
+  .pmg2-price-compare{color:var(--lc-text-soft,#777);text-decoration:line-through;font-size:15px;}
+  .pmg2-desc{color:var(--lc-text-soft,#777);font-size:14px;line-height:1.65;max-width:460px;}
+
+  .pmg2-option{display:flex;flex-direction:column;gap:8px;}
+  .pmg2-option-label{font-size:11px;letter-spacing:1.5px;text-transform:uppercase;color:var(--lc-text-soft,#777);}
+  .pmg2-option-values{display:flex;gap:8px;flex-wrap:wrap;}
+  .pmg2-swatch{padding:10px 16px;border:1px solid var(--lc-border,#DADADA);border-radius:3px;background:#fff;color:var(--lc-text,#171717);font-size:13px;cursor:pointer;transition:all .15s ease;}
+  .pmg2-swatch[aria-pressed="true"]{background:var(--lc-text,#171717);color:#fff;border-color:var(--lc-text,#171717);}
+  .pmg2-swatch[data-unavailable="true"]{opacity:.35;text-decoration:line-through;cursor:not-allowed;}
+  .pmg2-swatch:focus-visible{outline:2px solid var(--lc-text,#171717);outline-offset:2px;}
+
+  .pmg2-qty-row{display:flex;align-items:center;gap:10px;}
+  .pmg2-qty-input{width:60px;padding:8px;border:1px solid var(--lc-border,#DADADA);border-radius:3px;background:#fff;color:var(--lc-text,#171717);}
+  .pmg2-add-btn{width:100%;text-align:center;}
+  .pmg2-add-btn[data-loading="true"]{opacity:.7;pointer-events:none;}
+  .pmg2-add-btn:disabled{opacity:.45;cursor:not-allowed;}
+  .pmg2-add-status{font-size:13px;color:var(--lc-text-soft,#777);min-height:18px;margin:0;}
+  .pmg2-add-status[data-state="success"]{color:#1a7a3c;}
+  .pmg2-add-status[data-state="error"]{color:#b4232c;}
+
+  .pmg2-panel{border-top:1px solid var(--lc-border,#DADADA);padding:14px 0;color:var(--lc-text-soft,#777);}
+  .pmg2-panel summary{cursor:pointer;font-weight:600;color:var(--lc-text,#171717);font-size:13px;letter-spacing:.3px;text-transform:uppercase;}
+  .pmg2-panel-body{margin-top:10px;font-size:14px;line-height:1.6;}
+
+  .pmg2-related{max-width:1480px;margin:80px auto 0;}
+  .pmg2-related h2{font-size:20px;font-weight:600;color:var(--lc-text,#171717);margin:0 0 20px;}
+  .pmg2-related-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:18px;}
+  .pmg2-related-card{text-decoration:none;}
+  .pmg2-related-card img{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:4px;}
+  .pmg2-related-title{margin-top:8px;color:var(--lc-text,#171717);font-size:13px;}
+  .pmg2-related-price{color:var(--lc-text-soft,#777);font-size:13px;}
+
+  @media (max-width:980px){
+    .pmg2-grid{grid-template-columns:1fr;gap:28px;}
+    .pmg2-sticky{position:static;}
+  }
+</style>
+
+<script>
+(function(){
+  var root = document.querySelector('.pmg2-wrap[data-section-id="{{ section.id }}"]');
+  if(!root) return;
+  var product;
+  try { product = JSON.parse(root.dataset.productJson); } catch(e) { return; }
+
+  var variantInput = root.querySelector('[data-variant-id]');
+  var priceCurrent = root.querySelector('[data-price-current]');
+  var priceCompare = root.querySelector('[data-price-compare]');
+  var addBtn = root.querySelector('[data-add-btn]');
+  var addLabel = root.querySelector('[data-add-btn-label]');
+  var addStatus = root.querySelector('[data-add-status]');
+  var optionGroups = {};
+
+  root.querySelectorAll('.pmg2-swatch').forEach(function(sw){
+    var pos = sw.dataset.optionPosition;
+    optionGroups[pos] = optionGroups[pos] || [];
+    optionGroups[pos].push(sw);
+    sw.addEventListener('click', function(){
+      optionGroups[pos].forEach(function(s){ s.setAttribute('aria-pressed', s === sw ? 'true' : 'false'); });
+      updateSelection();
+    });
+  });
+
+  function currentSelection(){
+    return Object.keys(optionGroups).sort().map(function(pos){
+      var active = optionGroups[pos].find(function(s){ return s.getAttribute('aria-pressed') === 'true'; });
+      return active ? active.dataset.value : null;
+    });
+  }
+
+  function findVariant(selection){
+    return product.variants.find(function(v){
+      return selection.every(function(val, i){ return val === null || v.options[i] === val; });
+    });
+  }
+
+  function money(cents){
+    return '$' + (cents/100).toFixed(2);
+  }
+
+  function updateSelection(){
+    var selection = currentSelection();
+    var variant = findVariant(selection);
+    if(!variant) return;
+
+    variantInput.value = variant.id;
+    priceCurrent.textContent = money(variant.price);
+    if(variant.compare_at_price && variant.compare_at_price > variant.price){
+      priceCompare.textContent = money(variant.compare_at_price);
+      priceCompare.hidden = false;
+    } else {
+      priceCompare.hidden = true;
+    }
+
+    addBtn.disabled = !variant.available;
+    addLabel.textContent = variant.available ? 'Add to Cart' : 'Sold Out';
+
+    Object.keys(optionGroups).forEach(function(pos){
+      optionGroups[pos].forEach(function(sw){
+        var testSelection = selection.slice();
+        testSelection[parseInt(pos, 10) - 1] = sw.dataset.value;
+        var match = product.variants.find(function(v){
+          return testSelection.every(function(val, i){ return val === null || v.options[i] === val; });
+        });
+        sw.dataset.unavailable = (!match || !match.available) ? 'true' : 'false';
+      });
+    });
+  }
+
+  var form = root.querySelector('[data-product-form]');
+  form.addEventListener('submit', function(e){
+    e.preventDefault();
+    if(addBtn.dataset.loading === 'true') return;
+    addBtn.dataset.loading = 'true';
+    addStatus.textContent = 'Adding…';
+    addStatus.removeAttribute('data-state');
+
+    fetch('/cart/add.js', { method: 'POST', body: new FormData(form), headers: { 'Accept': 'application/json' } })
+      .then(function(r){ return r.json().then(function(data){ return { ok: r.ok, data: data }; }); })
+      .then(function(result){
+        addBtn.dataset.loading = 'false';
+        if(result.ok){
+          addStatus.textContent = 'Added to your bag.';
+          addStatus.dataset.state = 'success';
+          document.dispatchEvent(new CustomEvent('cart:refresh'));
+          var cartLink = document.querySelector('a[href="/cart"], [data-cart-trigger]');
+          if(cartLink){ cartLink.click(); }
+        } else {
+          addStatus.textContent = (result.data && result.data.description) || 'Could not add to cart.';
+          addStatus.dataset.state = 'error';
+        }
+      })
+      .catch(function(){
+        addBtn.dataset.loading = 'false';
+        addStatus.textContent = 'Network error — please try again.';
+        addStatus.dataset.state = 'error';
+      });
+  });
+
+  updateSelection();
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Product (glass) v2",
+  "settings": [
+    { "type": "textarea", "id": "shipping_text", "label": "Delivery & returns text", "default": "Free shipping on orders over $100. Returns accepted within 30 days, unworn with tags attached." }
+  ]
+}
+{% endschema %}
