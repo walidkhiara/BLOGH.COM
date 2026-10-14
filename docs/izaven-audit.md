@@ -152,3 +152,62 @@ be done across all surfaces in one pass, with visual checking.
 Preview: Admin → Online Store → Themes → the duplicate → **Preview**.
 Check the homepage, a collection page and the hoodie PDP on desktop and phone.
 Publish only after that review. **Nothing has been published by this audit.**
+
+---
+
+# Round 2 — further fixes
+
+**Note:** midway through, theme `208652730693` was **published** (it is now live,
+carrying all round-1 fixes). Writes to the live theme are blocked, so a new
+draft was created: **`IZAVEN working draft` (`208654926149`)**, duplicated from
+the live theme. Round-2 work is in that draft.
+
+## Additional defects found and fixed
+
+| # | Defect | Evidence | Fix |
+|---|---|---|---|
+| R1 | **Pagination never showed the current page number.** `part.title == paginate.current_page` compares a string to an integer, which is always false in Liquid, so the active page fell through to the `else` branch and rendered as `…`. | `collection-glass.liquid` | Discriminate on the ellipsis instead |
+| R2 | **`/cart`, `/search`, `/404`, `/pages/contact`, blog and gift-card pages had no header at all** — no menu, no search, no cart, no way back. Customers landing there were stranded. | `header-group.json` `disabled: true` + those templates carry no glass nav | Header enabled; hidden only where a glass nav exists |
+| R3 | **The header-hiding CSS never worked.** `hero-video-glass` used `.template-index #header-group`, but Horizon's `<body>` carries only `page-width-*` and `card-hover-effect-*` — there is no template class, so the rule matched nothing. | `layout/theme.liquid` body tag | Replaced with `body:has(.fvh / .cg / .cn-pdp)`, the pattern the theme already uses |
+| R4 | **Five placeholder social links in the footer** pointing at bare platform homepages (`facebook.com/`, `instagram.com/`, `youtube.com/`, `tiktok.com/`, `x.com/`) — not IZAVEN accounts. | `footer-group.json` | Block removed; re-add in the editor when real profiles exist |
+| R5 | **Size guide omits half the sizes on sale.** Generic XS–XL body chart, but the hoodie sells S–5XL, so 2XL/3XL/4XL/5XL have no measurements — and the chart was never measured from this garment. | `product-glass.liquid` vs product options | Hidden by the claims guard |
+| R6 | `brand_name` schema default still read "ClothingNow" (3 occurrences). | `collection-glass.liquid` | → IZAVEN |
+| R7 | No search entry point on the collection page. | `collection-glass.liquid` | Search link added to nav |
+| R8 | Autoplaying decorative banner announced to screen readers; nav links had no focus ring. | `collection-glass.liquid` | `aria-hidden` + `:focus-visible` |
+
+## Files changed in round 2
+
+| File | Change |
+|---|---|
+| `sections/header-group.json` | Header enabled (Shopify normalises `disabled: false` to absent) |
+| `snippets/izaven-header-visibility.liquid` | **New** — hides the header only where a glass nav exists |
+| `layout/theme.liquid` | Renders the snippet above |
+| `sections/collection-glass.liquid` | Pagination fix, search link, IZAVEN, a11y |
+| `sections/product-claims-guard.liquid` | Also hides the incomplete size guide |
+| `sections/footer-group.json` | Placeholder social block removed |
+
+## Verified
+
+- `templates/product.json`, `collection.json`, `index.json` re-read from the
+  draft — all read `IZAVEN`, badge off, claims guard wired in, 5 hero blocks.
+- `header-group.json` re-read — `disabled` key gone, i.e. enabled.
+- Theme-wide grep for `ClothingNow`, demo copy, placeholder URLs, `lorem`,
+  fake review counts — **0 hits** in the draft.
+- All edited JSON parses; all Liquid schemas parse.
+
+**Still not visually verified** — the sandbox cannot reach the storefront. The
+header change in particular (R2/R3) alters every page's chrome and must be
+checked in preview before publishing.
+
+## What remains genuinely outside my reach
+
+These are not refusals — they need data or decisions only you have:
+
+1. Refund / shipping / ToS policies — writing legal terms for you would be inventing them.
+2. Real shipping rates behind any offer you want to advertise.
+3. Products for the 6 empty collections.
+4. A logo and favicon file.
+5. Which of Printify / Printful / Trendsi / AutoDS / Zendrop you actually use.
+6. Whether the hoodie is embroidered or printed.
+7. Real garment measurements per size.
+8. The brand repalette (needs visual iteration).

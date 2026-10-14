@@ -5,15 +5,16 @@
   <canvas class="cg-amb" id="cg-amb" aria-hidden="true"></canvas>
 
   <header class="cg-nav">
-    <a class="cg-nav__brand" href="{{ routes.root_url }}" aria-label="{{ section.settings.brand_name | default: 'ClothingNow' | escape }} home">
+    <a class="cg-nav__brand" href="{{ routes.root_url }}" aria-label="{{ section.settings.brand_name | default: 'IZAVEN' | escape }} home">
       {%- if logo -%}
         <img class="cg-nav__logo" src="{{ logo | image_url: height: 72 }}" alt="" width="{{ logo.width | times: 36 | divided_by: logo.height | at_most: 160 }}" height="36" decoding="async">
       {%- endif -%}
-      <span class="cg-nav__name">{{ section.settings.brand_name | default: 'ClothingNow' }}</span>
+      <span class="cg-nav__name">{{ section.settings.brand_name | default: 'IZAVEN' }}</span>
     </a>
     <nav class="cg-nav__links" aria-label="Primary">
       <a href="{{ routes.root_url }}">Home</a>
       <a href="{{ routes.all_products_collection_url }}">Shop</a>
+      <a href="{{ routes.search_url }}">Search</a>
     </nav>
     <a class="cg-nav__bag" href="{{ routes.cart_url }}" aria-label="Bag, {{ cart.item_count }} items">
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
@@ -22,7 +23,7 @@
   </header>
 
   {%- if section.settings.banner_video != blank or section.settings.banner_image != blank -%}
-  <div class="cg-banner">
+  <div class="cg-banner" aria-hidden="true">
     {%- if section.settings.banner_video != blank -%}
       {{ section.settings.banner_video | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, class: 'cg-banner__media', image_size: '1600x' }}
     {%- else -%}
@@ -65,8 +66,8 @@
           {%- if paginate.previous -%}<a href="{{ paginate.previous.url }}">&larr; Prev</a>{%- endif -%}
           {%- for part in paginate.parts -%}
             {%- if part.is_link -%}<a href="{{ part.url }}">{{ part.title }}</a>
-            {%- elsif part.title == paginate.current_page -%}<span class="on" aria-current="page">{{ part.title }}</span>
-            {%- else -%}<span class="gap">&hellip;</span>{%- endif -%}
+            {%- elsif part.title == '&hellip;' or part.title == '...' -%}<span class="gap">&hellip;</span>
+            {%- else -%}<span class="on" aria-current="page">{{ part.title }}</span>{%- endif -%}
           {%- endfor -%}
           {%- if paginate.next -%}<a href="{{ paginate.next.url }}">Next &rarr;</a>{%- endif -%}
         </nav>
@@ -174,7 +175,7 @@ body:has(.cg) .page-wrapper, body:has(.cg) #MainContent { background: transparen
   "name": "Collection page (glass)",
   "settings": [
     { "type": "image_picker", "id": "logo", "label": "Logo in the top pill (uses your store logo if empty)" },
-    { "type": "text", "id": "brand_name", "label": "Brand name", "default": "ClothingNow" },
+    { "type": "text", "id": "brand_name", "label": "Brand name", "default": "IZAVEN" },
     { "type": "video", "id": "banner_video", "label": "Top banner video (fades into the page)" },
     { "type": "image_picker", "id": "banner_image", "label": "Banner image (used if no video)" },
     { "type": "range", "id": "per_page", "label": "Products per page", "min": 8, "max": 48, "step": 4, "default": 16 }
