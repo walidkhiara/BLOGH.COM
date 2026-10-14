@@ -211,3 +211,102 @@ These are not refusals — they need data or decisions only you have:
 6. Whether the hoodie is embroidered or printed.
 7. Real garment measurements per size.
 8. The brand repalette (needs visual iteration).
+
+---
+
+# Round 3 — delivery tracking + delivery estimate
+
+Theme `208654926149` ("IZAVEN working draft") was **published** mid-round and is
+now live with the round-2 fixes. Round 3 is in a new draft:
+**`IZAVEN delivery draft` (`208657318213`)**.
+
+## What was built
+
+### 1. Order tracking page — `/pages/track-your-order`
+
+`sections/order-tracking.liquid` + `templates/page.tracking.json`, and the page
+itself created in Shopify (`Page/730640154949`), published, template `tracking`.
+
+Three routes to a parcel, all native — no app, no API key:
+
+| Route | Who it serves | How it works |
+|---|---|---|
+| Tracking number → carrier | Anyone, including guests | Redirects to the carrier's own tracking page. 10 carriers incl. USPS, UPS, FedEx, DHL, Canada Post, Royal Mail, Evri, Poczta Polska, InPost, plus a 17track "not sure" fallback |
+| Account orders | Signed-in customers | Links to Shopify's hosted account page, which shows the tracking Printful/Printify push into the fulfilment |
+| Shipping email | Guests | Explains the "Track your order" button — that URL carries a token and is the only tokenless-free route |
+
+Client-side validation: empty input and malformed numbers get an inline,
+`aria-live` error; the field gets `aria-invalid`; opens in a new tab with
+`noopener`.
+
+**Why there is no "order number + email" lookup form:** storefront Liquid
+cannot read an arbitrary order. That lookup needs an authenticated Admin API
+call behind a Shopify App Proxy, i.e. a hosted app. Doing it from theme JS
+would require shipping an API token to the browser.
+
+### 2. Delivery estimate on the product page
+
+`sections/delivery-estimate.liquid`, wired into `templates/product.json`.
+
+- Computes `production days + transit days` in **business days** (weekends
+  skipped), the way Printful and Printify quote.
+- Resolves the buyer's region from `localization.country.iso_code`
+  (US / CA / UK / EU / rest of world) and uses that region's figures.
+- Renders real calendar dates via `toLocaleDateString`, with the Liquid-rendered
+  "X–Y business days" as a no-JS fallback.
+- Honours a daily cut-off hour: past it, production starts the next business day.
+- The PDP is one large custom section, so a template section would land at the
+  page bottom. The script relocates the estimate next to the buy button
+  (`.cn-pdp .cn-trust`).
+
+**A region renders nothing until its transit days are set**, so the page cannot
+invent a promise — the same rule as the claims guard.
+
+### Why this is not a live Printful feed
+
+Liquid cannot make server-side HTTP calls, and a Printful/Printify API key
+placed in theme JavaScript would be published to every visitor. A live feed
+needs an app proxy. The section instead uses figures you enter from the
+provider dashboard, and does the per-market date maths itself.
+
+### Pre-filled vs blank
+
+| Region | Transit | Source |
+|---|---|---|
+| Europe (27 countries) | 12–35 business days | Your own Printful profile names that zone *"Standard Delivery 12-35 business days"* |
+| United Kingdom | 12–35 business days | Same zone |
+| **United States** | **blank** | Nothing in your store states a US transit time |
+| **Canada** | **blank** | Nothing in your store states one |
+| **Rest of world** | **blank** | Nothing in your store states one |
+| **Production** | **blank** | Not knowable from Shopify |
+
+Until production days and the US figures are set, **the estimate does not
+render for US visitors** — your primary market. That is deliberate.
+
+## Menus updated (store data, applies to all themes)
+
+- Footer menu → Track your order, Contact, Search, Your Privacy Choices
+- Main menu → Shop, Track your order, Contact
+
+## Verified / not verified
+
+Verified: all four theme files re-read from the draft at expected sizes; both
+schemas parse; the page exists, is published and carries `templateSuffix:
+tracking`; both menus re-read with the new items.
+
+**Not verified:** nothing rendered in a browser (sandbox cannot reach the
+storefront). The store has **0 orders**, so the end-to-end path
+Printful → Shopify fulfilment → tracking number → account page could not be
+exercised. It relies on the provider app pushing tracking into Shopify, which
+is standard behaviour but untested here.
+
+## Owner actions for this round
+
+1. In the theme editor, open a product → **Delivery estimate** and enter
+   **production days** and **US / Canada / rest-of-world transit days** from
+   your Printful/Printify dashboard. Until then the estimate is hidden for
+   those markets.
+2. Confirm your provider app is connected so it pushes tracking numbers into
+   Shopify fulfilments — that is what makes routes 2 and 3 work.
+3. Place one real test order to confirm the tracking number arrives and the
+   account page shows it.
