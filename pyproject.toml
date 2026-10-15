@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "inkforge"
+version = "0.1.0"
+description = "Procedural manhwa fight renderer (local, offline, vector-first)"
+requires-python = ">=3.11"
+dependencies = [
+  "pydantic>=2.6",
+  "svgwrite>=1.4",
+  "cairosvg>=2.7",
+  "pillow>=10.0",
+]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+inkforge = "inkforge.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

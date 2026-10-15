@@ -1,0 +1,23 @@
+{
+  "id": "kazu",
+  "display_name": "Kazu",
+  "skeleton": "humanoid_v1",
+  "ink": "#0b0b0b",
+  "skin": "#fdfcf8",
+  "proportions": {
+    "total_height": 176.0,
+    "scale": 1.0,
+    "head_width": 16.5,
+    "head_height": 21.0,
+    "shoulder_width": 23.0,
+    "hip_width": 15.0,
+    "torso_taper": 0.76
+  },
+  "hair": {"style": "spiky", "spikes": 7, "length": 10.0, "fill": "#0b0b0b"},
+  "face": {"eye_size": 2.3, "eye_spacing": 5.4, "brow_angle": -18.0, "mouth_width": 4.5, "expression": "grit"},
+  "clothing": {"kind": "jacket", "fill": "#17191c", "skirt_length": 0.0},
+  "lines": {"outline": 2.8, "limb": 2.1, "detail": 1.2, "roughness": 1.0},
+  "parts": ["torso", "limbs", "head", "hair", "face"],
+  "named_poses": {"guard": "guard", "punch": "punch_right"},
+  "pose_corrections": {"punch": {"chest": -3.0}}
+}

@@ -55,3 +55,12 @@ Three.js is loaded as an ES module, so open `preview.html` over HTTP, not
 ```sh
 python3 -m http.server 8000   # then visit http://localhost:8000/preview.html
 ```
+
+---
+
+## InkForge Engine (separate project in this repo)
+
+`src/inkforge/` holds **InkForge**, a local procedural manhwa fight renderer
+(Python, SVG-first, no image-generation models). See
+[docs/INKFORGE.md](docs/INKFORGE.md) for conventions, the render command and
+the current milestone status.
