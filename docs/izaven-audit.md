@@ -387,3 +387,67 @@ checkout were not exercised — that needs a real browser session.
 4. If you change the 30% in Shopify admin, change **Bundle upsell → Discount
    percent** in the theme editor to match, or the advertised price will not
    match checkout.
+
+---
+
+# Round 5 — fixing "still not working"
+
+Draft: **`IZAVEN fix draft` (`208660037957`)**. The catalogue now holds 5
+products, all ACTIVE, published and in stock, so the "only one product"
+blocker from round 4 is gone — but the bundle card still did not appear.
+Two genuine defects, both mine.
+
+## Root cause 1 — the recommendations API returns nothing on a new store
+
+`sections/bundle-upsell.liquid` asked `/recommendations/products.json` for
+suggestions. That endpoint is driven by Shopify's recommendation engine, which
+needs traffic and order history before it returns anything. On a store with no
+orders it replies `{"products":[]}`, my `render()` returned early, and the card
+hid itself. The offer was never visible, whatever the catalogue size.
+
+**Fix:** the section now picks suggestions in **Liquid, server-side**, so the
+card is in the HTML on the first page view with no network call. Pool order:
+
+1. the `bundle-eligible` smart collection
+2. the current product's first collection
+3. `collections.all`
+
+The current product and anything already in the cart are skipped. Prices are
+rendered with Shopify's `money` filter and the bundle price is computed in
+Liquid (`(100 - pct) * price / 100`), so it tracks real prices. The remaining
+JavaScript only handles the "Add & save" click.
+
+## Root cause 2 — the smart collection was never published
+
+`Collection/707158901061` (`bundle-eligible`) was created through the Admin API,
+which does **not** publish to a sales channel by default. It had
+`resourcePublicationsCount: 0`, so `collections['bundle-eligible']` resolved to
+nil on the storefront and the intended pool was invisible.
+
+**Fix:** published to the Online Store channel (`Publication/374257713477`).
+Verified: `resourcePublicationsCount` is now 1 and the collection auto-matched
+all 5 products via its `VARIANT_PRICE > 0` rule.
+
+## Delivery estimate — every region now set to 5–10
+
+Previously only US was 5–10; Canada, UK, Europe and rest-of-world were 0, which
+means "render nothing". Any visitor outside the US saw no estimate at all. All
+regions are now 5–10 calendar days, per the owner's instruction that delivery
+is "5-10 days max".
+
+This overrides the 12–35 figure that came from the store's own Printful zone
+names. That was the owner's explicit decision, twice stated.
+
+## Verified
+
+- Draft re-read: all four files present at expected sizes.
+- `bundle-eligible` → 5 products, 1 publication (Online Store).
+- All 5 products: ACTIVE, `publishedAt` set, 1 publication, price > 0,
+  `availableForSale: true`.
+- Discount `DiscountAutomaticNode/2259374997829` still ACTIVE,
+  "Buy 1 item, get 1 item at 30% off".
+- Bundle price maths checked by hand: $114.66 → $80.26 at 30% off.
+- Liquid schema and both JSON templates parse.
+
+**Still not render-tested** — the sandbox cannot reach the storefront, so no
+browser check of layout or of the add-to-cart call.
