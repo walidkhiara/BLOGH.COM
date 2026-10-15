@@ -310,3 +310,80 @@ is standard behaviour but untested here.
    Shopify fulfilments — that is what makes routes 2 and 3 work.
 3. Place one real test order to confirm the tracking number arrives and the
    account page shows it.
+
+---
+
+# Round 4 — bundle cross-sell: "add a second piece, save 30%"
+
+Draft: **`IZAVEN bundle draft` (`208659251525`)**. The previous draft was
+published mid-round again, so this is a fresh duplicate of it.
+
+## No app required
+
+The merchant asked for an "app". None is needed — Shopify does Buy-X-Get-Y
+natively, and the storefront offer is a theme section. Nothing recurring to pay
+for, no third-party script, no API key.
+
+## 1. The discount (store data, live on every theme)
+
+`DiscountAutomaticNode/2259374997829` — **"Bundle & save 30% — add a second
+piece"**, status ACTIVE, starts 2026-10-15, no end date.
+Shopify summary: *"Buy 1 item, get 1 item at 30% off"*.
+
+BXGY discounts cannot target "all products", so a smart collection was created
+to stand in for the whole catalogue:
+
+- `Collection/707158901061` — handle `bundle-eligible`, rule
+  `VARIANT_PRICE > 0`. It auto-includes every product, so the offer covers any
+  pair without hardcoding product IDs. **Not added to any menu.**
+
+Shopify applies the 30% in the cart and at checkout by itself. The theme does
+not compute or apply the discount — it only advertises it.
+
+## 2. The storefront offer — `sections/bundle-upsell.liquid`
+
+Placed on `templates/product.json` and `templates/cart.json`.
+
+- Pulls suggestions from Shopify's own `/recommendations/products.json`,
+  trying `complementary` (curated in Search & Discovery) and falling back to
+  `related`, which works with no setup. No third-party service.
+- Shows each suggestion with its real price struck through and the bundle
+  price beside it, **computed from the live product price**, not hardcoded.
+- One-click "Add & save" posts to `/cart/add.js` and sends the shopper to the
+  cart, where Shopify's discount has already applied.
+- On the PDP the script relocates the card next to the buy button, because
+  `product-glass` is one monolithic section and a template section would
+  otherwise land at the foot of the page.
+- Percentage, suggestion count and all copy are theme-editor settings.
+
+## Known limitation — this shows nothing today
+
+**The store has one product.** `/recommendations/products.json` needs at least
+one other product to suggest, so the card renders nothing and the offer is
+invisible. The discount itself is live and would apply to any 2-item cart, but
+with a single product a shopper would have to add two of the same hoodie.
+
+It starts working on its own the moment a second product exists. No code change
+needed.
+
+## Verified / not verified
+
+Verified: discount re-read from the API as ACTIVE with the expected summary;
+smart collection created with the expected rule; all three theme files re-read
+at expected sizes; both JSON templates and the section schema parse.
+
+Not verified: nothing rendered in a browser (sandbox cannot reach the
+storefront), and the add-to-cart path and the discount actually applying at
+checkout were not exercised — that needs a real browser session.
+
+## Owner actions
+
+1. **Add a second product.** Nothing about this feature is visible until then.
+2. Preview a product page and the cart, add two items, and confirm the cart
+   shows −30% on the cheaper one.
+3. Optional: in **Search & Discovery**, curate complementary products per
+   item so the suggestion is a deliberate pairing (hoodie → joggers) rather
+   than Shopify's automatic "related".
+4. If you change the 30% in Shopify admin, change **Bundle upsell → Discount
+   percent** in the theme editor to match, or the advertised price will not
+   match checkout.
