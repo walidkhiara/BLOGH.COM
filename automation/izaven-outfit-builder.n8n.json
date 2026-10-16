@@ -1,0 +1,471 @@
+{
+  "name": "IZAVEN \u2014 AI shoppable outfit builder",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "izaven-outfit",
+        "responseMode": "lastNode",
+        "options": {
+          "binaryPropertyName": "image",
+          "rawBody": false
+        }
+      },
+      "id": "webhook",
+      "name": "Admin uploads outfit",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -460,
+        300
+      ],
+      "webhookId": "izaven-outfit"
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Validate the upload before spending an AI call or touching Shopify.\nconst MAX_BYTES = 8 * 1024 * 1024;\nconst OK_MIME = ['image/jpeg', 'image/png', 'image/webp'];\n// Magic bytes, so a renamed .exe cannot pose as a .jpg.\nconst SIG = {\n  'image/jpeg': [[0xFF, 0xD8, 0xFF]],\n  'image/png':  [[0x89, 0x50, 0x4E, 0x47]],\n  'image/webp': [[0x52, 0x49, 0x46, 0x46]],\n};\n\nconst item = $input.first();\nconst bin = item.binary && item.binary.image;\nif (!bin) throw new Error('No image uploaded. Send multipart/form-data with a field named \"image\".');\n\nconst buf = Buffer.from(bin.data, 'base64');\nif (buf.length > MAX_BYTES) throw new Error(`Image is ${(buf.length/1048576).toFixed(1)}MB; limit is 8MB.`);\n\nconst mime = (bin.mimeType || '').toLowerCase();\nif (!OK_MIME.includes(mime)) throw new Error(`Unsupported type \"${mime}\". Use JPEG, PNG or WebP.`);\n\nconst sigs = SIG[mime];\nconst head = [...buf.subarray(0, 4)];\nconst matches = sigs.some(s => s.every((b, i) => head[i] === b));\nif (!matches) throw new Error('File contents do not match the declared image type.');\n\nconst title = (item.json.title || '').toString().trim().slice(0, 120) || 'Untitled outfit';\n\nreturn [{\n  json: { title, mime, bytes: buf.length, filename: bin.fileName || 'outfit.jpg' },\n  binary: { image: bin },\n}];\n"
+      },
+      "id": "validate-upload",
+      "name": "Validate upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -240,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qi0zkk-k1.myshopify.com/admin/api/2026-01/graphql.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"mutation($input: [StagedUploadInput!]!) { stagedUploadsCreate(input: $input) { stagedTargets { url resourceUrl parameters { name value } } userErrors { field message } } }\",\n  \"variables\": {\n    \"input\": [\n      {\n        \"filename\": \"={{ $json.filename }}\",\n        \"mimeType\": \"={{ $json.mime }}\",\n        \"resource\": \"IMAGE\",\n        \"httpMethod\": \"POST\",\n        \"fileSize\": \"={{ $json.bytes }}\"\n      }\n    ]\n  }\n}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "request-upload-slot",
+      "name": "Request upload slot",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -20,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "shopify-admin-token",
+          "name": "IZAVEN Shopify Admin token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Hand the binary to Shopify's staged target with the signed form fields.\nconst t = $input.first().json?.data?.stagedUploadsCreate?.stagedTargets?.[0];\nif (!t) throw new Error('Shopify did not return an upload target: ' + JSON.stringify($input.first().json).slice(0,300));\nreturn [{ json: { url: t.url, resourceUrl: t.resourceUrl, parameters: t.parameters }, binary: $('Validate upload').first().binary }];"
+      },
+      "id": "prep-upload",
+      "name": "Prepare staged upload",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        200,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $json.url }}",
+        "sendBody": true,
+        "contentType": "multipart-form-data",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "file",
+              "parameterType": "formBinaryData",
+              "inputDataFieldName": "image"
+            }
+          ]
+        },
+        "options": {
+          "timeout": 60000
+        }
+      },
+      "id": "upload-binary",
+      "name": "Upload image bytes",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        420,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qi0zkk-k1.myshopify.com/admin/api/2026-01/graphql.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"mutation($files: [FileCreateInput!]!) { fileCreate(files: $files) { files { id fileStatus } userErrors { field message } } }\",\n  \"variables\": {\n    \"files\": [\n      {\n        \"originalSource\": \"={{ $json.resourceUrl }}\",\n        \"contentType\": \"IMAGE\",\n        \"alt\": \"={{ $('Validate upload').first().json.title }}\"\n      }\n    ]\n  }\n}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "attach-image-to-shopify",
+      "name": "Attach image to Shopify",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "shopify-admin-token",
+          "name": "IZAVEN Shopify Admin token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "// Re-attach the binary so the vision call can send the same bytes.\nreturn [{ json: $('Validate upload').first().json, binary: $('Validate upload').first().binary }];"
+      },
+      "id": "rehydrate",
+      "name": "Reload image for AI",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://openrouter.ai/api/v1/chat/completions",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"model\": \"={{ $json.model || 'qwen/qwen2.5-vl-32b-instruct' }}\",\n  \"max_tokens\": 1800,\n  \"temperature\": 0.1,\n  \"messages\": [\n    {\n      \"role\": \"system\",\n      \"content\": \"You are a garment detector for a fashion retailer. You describe only what is visible in the photograph. You never invent product names, brands, prices or stock. Reply with a JSON array and nothing else.\"\n    },\n    {\n      \"role\": \"user\",\n      \"content\": [\n        {\n          \"type\": \"text\",\n          \"text\": \"List every distinct wearable item visible. Reply ONLY with a JSON array. Each element: {\\\"category\\\": one of [t-shirt,shirt,hoodie,sweatshirt,jacket,coat,trousers,jeans,shorts,skirt,dress,shoes,sneakers,boots,bag,hat,belt,accessory], \\\"color\\\": string, \\\"descriptors\\\": string, \\\"description\\\": string, \\\"bbox\\\": {\\\"x\\\":0-1,\\\"y\\\":0-1,\\\"w\\\":0-1,\\\"h\\\":0-1}, \\\"anchor\\\": {\\\"x\\\":0-1,\\\"y\\\":0-1}, \\\"confidence\\\": 0-1, \\\"ambiguity\\\": string}. Coordinates are fractions of image width/height, origin top-left. anchor is a good spot to place a label, clear of other garments. Omit anything you cannot see clearly.\"\n        },\n        {\n          \"type\": \"image_url\",\n          \"image_url\": {\n            \"url\": \"=data:{{ $json.mime }};base64,{{ $binary.image.data }}\"\n          }\n        }\n      ]\n    }\n  ]\n}",
+        "options": {
+          "timeout": 90000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          },
+          "retry": {
+            "retry": {
+              "maxTries": 2,
+              "waitBetweenTries": 3000
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "detect-garments-(openrouter)",
+      "name": "Detect garments (OpenRouter)",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1080,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "openrouter-key",
+          "name": "OpenRouter API key"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// The model's reply is UNTRUSTED INPUT. Validate it against a strict schema\n// before anything downstream touches it. Never eval, never render raw.\nconst res = $input.first().json;\n\nif (res.error) {\n  const m = (res.error.message || '').toString();\n  const code = res.error.code;\n  if (code === 401 || /auth/i.test(m)) throw new Error('OpenRouter rejected the API key. Check the credential in n8n.');\n  if (code === 402 || /credit|quota/i.test(m)) throw new Error('OpenRouter quota exhausted. Top up or wait for the free tier to reset. No paid model was substituted.');\n  if (code === 404) throw new Error('That model id is not available to your account. Check https://openrouter.ai/models for a vision-capable alternative.');\n  throw new Error('OpenRouter error: ' + m.slice(0, 200));\n}\n\nconst text = res?.choices?.[0]?.message?.content;\nif (typeof text !== 'string' || !text.trim()) throw new Error('Model returned an empty response.');\n\n// Models often wrap JSON in prose or a code fence. Extract the outermost array.\nlet raw = text.trim().replace(/^```(?:json)?/i, '').replace(/```$/, '').trim();\nconst start = raw.indexOf('[');\nconst end = raw.lastIndexOf(']');\nif (start === -1 || end === -1) throw new Error('Model did not return a JSON array. Raw start: ' + raw.slice(0, 120));\n\nlet parsed;\ntry { parsed = JSON.parse(raw.slice(start, end + 1)); }\ncatch (e) { throw new Error('Model returned malformed JSON: ' + e.message); }\nif (!Array.isArray(parsed)) throw new Error('Expected a JSON array of garments.');\n\nconst CATEGORIES = ['t-shirt','shirt','hoodie','sweatshirt','jacket','coat','trousers','jeans','shorts',\n  'skirt','dress','shoes','sneakers','boots','bag','hat','belt','accessory'];\n\nconst num01 = (v) => typeof v === 'number' && isFinite(v) && v >= 0 && v <= 1;\n\nconst garments = [];\nconst rejected = [];\n\nparsed.slice(0, 12).forEach((g, i) => {\n  const why = [];\n  const cat = (g.category || '').toString().toLowerCase().trim();\n  if (!CATEGORIES.includes(cat)) why.push(`unknown category \"${cat}\"`);\n\n  const bb = g.bbox || {};\n  if (!['x','y','w','h'].every(k => num01(bb[k]))) why.push('bbox outside 0-1');\n\n  let ax = g.anchor?.x, ay = g.anchor?.y;\n  if (!num01(ax) || !num01(ay)) {            // derive the anchor from the box centre\n    ax = num01(bb.x) && num01(bb.w) ? bb.x + bb.w / 2 : null;\n    ay = num01(bb.y) && num01(bb.h) ? bb.y + bb.h / 2 : null;\n  }\n  if (!num01(ax) || !num01(ay)) why.push('no usable anchor');\n\n  let conf = g.confidence;\n  if (typeof conf !== 'number' || !isFinite(conf) || conf < 0 || conf > 1) conf = 0;\n\n  if (why.length) { rejected.push({ index: i, reasons: why }); return; }\n\n  garments.push({\n    id: `g${i + 1}`,\n    category: cat,\n    colour: (g.color || g.colour || '').toString().slice(0, 40),\n    descriptors: (g.descriptors || g.style || '').toString().slice(0, 200),\n    description: (g.description || '').toString().slice(0, 300),\n    bbox: { x: +bb.x.toFixed(4), y: +bb.y.toFixed(4), w: +bb.w.toFixed(4), h: +bb.h.toFixed(4) },\n    anchor: { x: +ax.toFixed(4), y: +ay.toFixed(4) },\n    confidence: +conf.toFixed(3),\n    ambiguity: (g.ambiguity || '').toString().slice(0, 200),\n  });\n});\n\nif (!garments.length) throw new Error('No valid garments survived validation. Rejected: ' + JSON.stringify(rejected));\n\nreturn [{ json: { garments, rejected, model: res.model || null, usage: res.usage || null } }];\n"
+      },
+      "id": "validate-ai-response",
+      "name": "Validate AI response",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1300,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qi0zkk-k1.myshopify.com/admin/api/2026-01/graphql.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"query($cursor: String) { products(first: 100, after: $cursor, query: \\\"status:active\\\") { pageInfo { hasNextPage endCursor } nodes { id handle title productType tags description featuredMedia { preview { image { url } } } variants(first: 20) { nodes { id title price availableForSale } } } } }\"\n}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "fetch-shopify-catalogue",
+      "name": "Fetch Shopify catalogue",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1520,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "shopify-admin-token",
+          "name": "IZAVEN Shopify Admin token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Deterministic, explainable matching. The model NEVER supplies catalogue data;\n// it only describes pixels. Products come from Shopify and nowhere else.\nconst garments = $('Validate AI response').first().json.garments;\nconst resp = $input.first().json;\n\nif (resp.errors) throw new Error('Shopify product query failed: ' + JSON.stringify(resp.errors).slice(0, 300));\n\nconst products = (resp?.data?.products?.nodes || []).map(p => ({\n  id: p.id,\n  handle: p.handle,\n  title: p.title,\n  type: (p.productType || '').toLowerCase(),\n  tags: (p.tags || []).map(t => t.toLowerCase()),\n  available: !!p.variants?.nodes?.some(v => v.availableForSale),\n  price: p.variants?.nodes?.[0]?.price || null,\n  image: p.featuredMedia?.preview?.image?.url || null,\n  haystack: [p.title, p.productType, (p.tags || []).join(' '), p.description || '']\n    .join(' ').toLowerCase(),\n}));\n\nif (!products.length) throw new Error('Shopify returned no products; cannot match anything.');\n\n// Map a detected garment category onto words that would appear in a listing.\nconst SYNONYMS = {\n  'hoodie': ['hoodie','hooded','sweatshirt'], 'sweatshirt': ['sweatshirt','hoodie','crewneck'],\n  't-shirt': ['t-shirt','tee','tshirt'], 'shirt': ['shirt','polo','button'],\n  'jacket': ['jacket','outerwear','coat','bomber'], 'coat': ['coat','jacket','parka'],\n  'trousers': ['trouser','pant','chino','jogger'], 'jeans': ['jean','denim'],\n  'shorts': ['short'], 'skirt': ['skirt'], 'dress': ['dress'],\n  'shoes': ['shoe','footwear'], 'sneakers': ['sneaker','trainer','shoe'], 'boots': ['boot'],\n  'bag': ['bag','tote','backpack'], 'hat': ['hat','cap','beanie'],\n  'belt': ['belt'], 'accessory': ['accessor','scarf','sock'],\n};\nconst COLOURS = ['black','white','grey','gray','navy','blue','red','green','brown','beige','cream',\n  'tan','pink','purple','yellow','orange','olive','charcoal','floral'];\n\nconst HIGH = 0.70, LOW = 0.40;\n\nconst out = garments.map(g => {\n  const words = SYNONYMS[g.category] || [g.category];\n  const gColour = COLOURS.find(c => (g.colour || '').toLowerCase().includes(c));\n\n  const scored = products.map(p => {\n    let score = 0; const why = [];\n    if (words.some(w => p.type.includes(w)))      { score += 0.45; why.push(`product type matches \"${g.category}\"`); }\n    if (words.some(w => p.title.toLowerCase().includes(w))) { score += 0.30; why.push('title matches category'); }\n    if (words.some(w => p.tags.some(t => t.includes(w))))   { score += 0.15; why.push('tag matches category'); }\n    if (gColour && p.haystack.includes(gColour)) { score += 0.20; why.push(`colour \"${gColour}\" matches`); }\n    // The detector's own confidence tempers the result, it does not create it.\n    score = score * (0.6 + 0.4 * g.confidence);\n    return { ...p, score: +Math.min(score, 1).toFixed(3), rationale: why.join('; ') || 'no signal' };\n  }).filter(c => c.score > 0)\n    .sort((a, b) => b.score - a.score)\n    .slice(0, 4);\n\n  const best = scored[0];\n  const runnerUp = scored[1];\n\n  let status;\n  if (!best)                                     status = 'no_match';\n  else if (best.score < LOW)                     status = 'unresolved';\n  else if (best.score < HIGH)                    status = 'needs_review';\n  else if (runnerUp && best.score - runnerUp.score < 0.12) status = 'ambiguous';\n  else if (!best.available)                      status = 'out_of_stock';\n  else                                           status = 'high_confidence';\n\n  return { ...g, status, candidates: scored };\n});\n\nconst blocking = out.filter(g => g.status !== 'high_confidence');\n\nreturn [{ json: {\n  garments: out,\n  requires_review: blocking.length > 0,\n  review_reasons: blocking.map(g => `${g.id} (${g.category}): ${g.status}`),\n  catalogue_size: products.length,\n} }];\n"
+      },
+      "id": "match-garments-to-products",
+      "name": "Match garments to products",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1740,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "\n// Build the metaobject payload. ALWAYS draft: nothing auto-publishes while any\n// garment is unresolved, and auto-publish is off by default regardless.\nconst m = $input.first().json;\nconst meta = $('Validate upload').first().json;\nconst fileId = $('Attach image to Shopify').first().json?.data?.fileCreate?.files?.[0]?.id;\nif (!fileId) throw new Error('Image did not attach to Shopify Files; refusing to create a half-built outfit.');\n\n// Only high-confidence, in-stock, really-existing products become live hotspots.\nconst hotspots = m.garments\n  .filter(g => g.status === 'high_confidence')\n  .map(g => ({\n    id: g.id,\n    handle: g.candidates[0].handle,\n    x: g.anchor.x, y: g.anchor.y,\n    ax: g.bbox.x + g.bbox.w / 2,\n    ay: g.bbox.y + g.bbox.h / 2,\n    label: g.candidates[0].title,\n  }));\n\n// Everything uncertain is preserved for the admin to resolve by hand.\nconst pending = m.garments\n  .filter(g => g.status !== 'high_confidence')\n  .map(g => ({ id: g.id, category: g.category, colour: g.colour, status: g.status,\n               anchor: g.anchor, bbox: g.bbox,\n               candidates: g.candidates.map(c => ({ handle: c.handle, title: c.title,\n                 score: c.score, available: c.available, rationale: c.rationale })) }));\n\nreturn [{ json: {\n  title: meta.title,\n  fileId,\n  hotspots: JSON.stringify(hotspots),\n  note: pending.length\n    ? `${pending.length} garment(s) need review before publishing.`\n    : 'All garments matched with high confidence.',\n  pending,\n  requires_review: m.requires_review,\n} }];\n"
+      },
+      "id": "build-outfit-record",
+      "name": "Build outfit record",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1960,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://qi0zkk-k1.myshopify.com/admin/api/2026-01/graphql.json",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"query\": \"mutation($metaobject: MetaobjectCreateInput!) { metaobjectCreate(metaobject: $metaobject) { metaobject { id handle } userErrors { field message code } } }\",\n  \"variables\": {\n    \"metaobject\": {\n      \"type\": \"shoppable_outfit\",\n      \"capabilities\": {\n        \"publishable\": {\n          \"status\": \"DRAFT\"\n        }\n      },\n      \"fields\": [\n        {\n          \"key\": \"title\",\n          \"value\": \"={{ $json.title }}\"\n        },\n        {\n          \"key\": \"image\",\n          \"value\": \"={{ $json.fileId }}\"\n        },\n        {\n          \"key\": \"hotspots\",\n          \"value\": \"={{ $json.hotspots }}\"\n        },\n        {\n          \"key\": \"note\",\n          \"value\": \"={{ $json.note }}\"\n        }\n      ]\n    }\n  }\n}",
+        "options": {
+          "timeout": 60000,
+          "response": {
+            "response": {
+              "neverError": true
+            }
+          }
+        },
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth"
+      },
+      "id": "save-outfit-as-draft",
+      "name": "Save outfit as DRAFT",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2180,
+        300
+      ],
+      "credentials": {
+        "httpHeaderAuth": {
+          "id": "shopify-admin-token",
+          "name": "IZAVEN Shopify Admin token"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst r = $input.first().json;\nconst created = r?.data?.metaobjectCreate;\nconst errs = created?.userErrors || [];\nif (errs.length) throw new Error('Shopify refused to save the outfit: ' + JSON.stringify(errs));\n\nconst id = created?.metaobject?.id;\nconst handle = created?.metaobject?.handle;\nif (!id) throw new Error('Shopify did not return a metaobject id.');\n\nconst build = $('Build outfit record').first().json;\n\nreturn [{ json: {\n  ok: true,\n  status: 'DRAFT',\n  metaobject_id: id,\n  metaobject_handle: handle,\n  admin_url: `https://admin.shopify.com/store/qi0zkk-k1/content/entries/shoppable_outfit/${id.split('/').pop()}`,\n  live_hotspots: JSON.parse(build.hotspots).length,\n  needs_review: build.pending.length,\n  pending: build.pending,\n  next_step: build.pending.length\n    ? 'Open the admin URL, resolve the pending garments, then set the entry to Active.'\n    : 'Open the admin URL, check the hotspot positions, then set the entry to Active.',\n} }];\n"
+      },
+      "id": "report-result",
+      "name": "Report result",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2400,
+        300
+      ]
+    }
+  ],
+  "connections": {
+    "Admin uploads outfit": {
+      "main": [
+        [
+          {
+            "node": "Validate upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate upload": {
+      "main": [
+        [
+          {
+            "node": "Request upload slot",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Request upload slot": {
+      "main": [
+        [
+          {
+            "node": "Prepare staged upload",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Prepare staged upload": {
+      "main": [
+        [
+          {
+            "node": "Upload image bytes",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Upload image bytes": {
+      "main": [
+        [
+          {
+            "node": "Attach image to Shopify",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Attach image to Shopify": {
+      "main": [
+        [
+          {
+            "node": "Reload image for AI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Reload image for AI": {
+      "main": [
+        [
+          {
+            "node": "Detect garments (OpenRouter)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Detect garments (OpenRouter)": {
+      "main": [
+        [
+          {
+            "node": "Validate AI response",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Validate AI response": {
+      "main": [
+        [
+          {
+            "node": "Fetch Shopify catalogue",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Fetch Shopify catalogue": {
+      "main": [
+        [
+          {
+            "node": "Match garments to products",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Match garments to products": {
+      "main": [
+        [
+          {
+            "node": "Build outfit record",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Build outfit record": {
+      "main": [
+        [
+          {
+            "node": "Save outfit as DRAFT",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Save outfit as DRAFT": {
+      "main": [
+        [
+          {
+            "node": "Report result",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "saveManualExecutions": true,
+    "errorWorkflow": "",
+    "timezone": "Europe/Warsaw"
+  },
+  "pinData": {},
+  "meta": {
+    "instanceId": "izaven"
+  },
+  "tags": []
+}
