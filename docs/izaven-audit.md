@@ -633,3 +633,14 @@ Draft `IZAVEN studio v3 draft` (`gid://shopify/OnlineStoreTheme/208787145029`, u
 - New optional `studio_video` section setting (Shopify-hosted video, muted loop, paused for reduced motion).
 - NOTE: the deployed `sections/product-ark8.liquid` is a hand-compacted variant of `theme/sections/product-ark8.liquid`
   (dead v1 chip/header CSS removed); behaviour is the same. Locally rendered/clicked: the fuller repo version only.
+
+## Round 11 — stable background + bottom dock
+Draft `IZAVEN studio v4 draft` (`gid://shopify/OnlineStoreTheme/208790192453`, unpublished).
+- Section split: `sections/product-ark8.liquid` (markup+schema), `assets/ark-product.css`, `assets/ark-product.js`
+  so later visual tweaks upload one file.
+- Studio layer (`.ark__bg`) and the new liquid dock (`.ark-dock`: delivery dates, "30% off your second piece",
+  footer-menu links, copyright) are re-parented to `<body>` on load, so no Horizon wrapper can scroll or clip them.
+- In-flow delivery estimate, bundle upsell and theme footer are removed/hidden on the product page; their info now lives in the dock.
+- Desktop at 1408x1024: document height equals the viewport (no page scroll). Mobile/tablet: content scrolls, background and dock stay fixed.
+- Deployed CSS/JS are hand-compacted copies of `theme/assets/ark-product.*` (same rules, dead v1 CSS removed); the repo
+  copies were the ones rendered locally.
