@@ -1,0 +1,709 @@
+{%- comment -%}
+  PRODUCT ARK8 — floating-panel product canvas.
+
+  Composition (from the supplied reference, 1408 x 1024):
+    warm grey canvas  |  compact header  |  isolated full-body image, centred
+    white information panel floating left  |  white size + purchase panel right
+    hairline connector lines panel -> garment  |  tiny thumbnails under the left panel
+
+  IMAGE SLOTS (replace without touching the layout)
+    1. Product metafield  custom.cutout_image  (file, image)  -> main stage image
+       (use a transparent PNG / WebP; the alpha channel is preserved untouched)
+    2. Otherwise the product's first image.
+    3. Thumbnails are the product's own media, in order.
+    4. No media at all -> a dimensioned development placeholder (never stretched).
+
+  CONTENT is read from Shopify only. Rows with no real content are not rendered:
+    Materials   -> product.metafields.custom.materials
+    Packaging   -> product.metafields.custom.packaging
+    Size guide  -> section setting "Size guide page" or product.metafields.custom.size_guide
+    Shipping    -> section setting + store policy links if the policies exist
+    Fit line    -> product.metafields.custom.model_height + custom.model_size
+{%- endcomment -%}
+
+{%- liquid
+  assign v = product.selected_or_first_available_variant
+  assign bg = section.settings.canvas
+
+  assign crumb_col = collection
+  if crumb_col == blank
+    assign crumb_col = product.collections.first
+  endif
+
+  assign cutout = product.metafields.custom.cutout_image.value
+  assign main_img = null
+  if cutout != blank
+    assign main_img = cutout.preview_image | default: cutout
+  else
+    for m in product.media
+      if m.media_type == 'image'
+        assign main_img = m.preview_image
+        break
+      endif
+    endfor
+  endif
+
+  assign is_pre = false
+  if product.tags contains 'preorder' or product.tags contains 'pre-order'
+    assign is_pre = true
+  elsif v.inventory_management != blank and v.inventory_policy == 'continue' and v.inventory_quantity <= 0
+    assign is_pre = true
+  endif
+
+  assign materials = product.metafields.custom.materials
+  assign packaging = product.metafields.custom.packaging
+  assign size_page = section.settings.size_guide_page
+  assign size_meta = product.metafields.custom.size_guide
+  assign model_h = product.metafields.custom.model_height
+  assign model_s = product.metafields.custom.model_size
+  assign nav = section.settings.menu
+-%}
+
+<style>
+  body:has(.ark) #header-group { display: none; }
+  body:has(.ark) .page-wrapper { padding-top: 0; margin-top: 0; }
+  body:has(.ark) { background: {{ bg }}; }
+</style>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Cormorant+Garamond:wght@500;600&display=swap">
+
+<div class="ark" data-ark style="--ark-bg: {{ bg }}">
+
+  {%- comment -%} ---------------- HEADER ---------------- {%- endcomment -%}
+  <header class="ark__bar">
+    <div class="ark__brand">
+      <a class="ark__logo" href="{{ routes.root_url }}">{{ section.settings.brand_name | escape }}</a>
+      <nav class="ark__crumb" aria-label="Breadcrumb">
+        <a href="{{ routes.root_url }}">Home</a><span aria-hidden="true">&gt;</span><a href="{{ routes.all_products_collection_url }}">Shop</a>
+        {%- if crumb_col != blank -%}<span aria-hidden="true">&gt;</span><a href="{{ crumb_col.url }}">{{ crumb_col.title | escape }}</a>{%- endif -%}
+      </nav>
+    </div>
+
+    {%- if nav != blank and nav.links.size > 0 -%}
+      <nav class="ark__nav" aria-label="Primary">
+        {%- for link in nav.links limit: 3 -%}
+          <a class="ark-chip ark-notch" href="{{ link.url }}">{{ link.title | escape }}</a>
+        {%- endfor -%}
+      </nav>
+    {%- endif -%}
+
+    <div class="ark__tools">
+      <a class="ark-chip ark-notch ark-chip--icon" href="{{ routes.search_url }}" aria-label="Search">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+      </a>
+      {%- if customer -%}
+        <a class="ark-chip ark-notch" href="{{ routes.account_url }}">Account</a>
+      {%- else -%}
+        <a class="ark-chip ark-notch" href="{{ routes.account_login_url }}">Log in</a>
+      {%- endif -%}
+      <a class="ark-chip ark-notch" href="{{ routes.cart_url }}" aria-label="Bag, {{ cart.item_count }} items">Bag/<span data-ark-count>{{ cart.item_count }}</span></a>
+    </div>
+  </header>
+
+  <div class="ark__stage" data-ark-stage>
+
+    {%- comment -%} ---------------- CENTRAL IMAGE ---------------- {%- endcomment -%}
+    <div class="ark__model" data-ark-model>
+      {%- if main_img != blank -%}
+        <img
+          class="ark__img{% if section.settings.blend_white %} is-blend{% endif %}"
+          data-ark-main
+          src="{{ main_img | image_url: width: 1200 }}"
+          srcset="{{ main_img | image_url: width: 600 }} 600w, {{ main_img | image_url: width: 900 }} 900w, {{ main_img | image_url: width: 1200 }} 1200w, {{ main_img | image_url: width: 1800 }} 1800w"
+          sizes="(min-width: 1000px) 44vw, 92vw"
+          width="{{ main_img.width }}"
+          height="{{ main_img.height }}"
+          alt="{{ main_img.alt | default: product.title | escape }}"
+          fetchpriority="high"
+          decoding="async"
+        >
+      {%- else -%}
+        <svg class="ark__ph" data-ark-main-ph viewBox="0 0 500 900" role="img" aria-label="Main image slot: no product image yet" preserveAspectRatio="xMidYMid meet">
+          <rect x="1" y="1" width="498" height="898" fill="none" stroke="#bdb8ae" stroke-width="1.5" stroke-dasharray="6 7"/>
+          <path d="M250 150a40 46 0 1 1 0 92 40 46 0 1 1 0-92ZM172 268H328L368 392 334 402 322 468V800H262L250 528 238 800H178V468L166 402 132 392Z" fill="none" stroke="#bdb8ae" stroke-width="1.5"/>
+          <text x="250" y="860" text-anchor="middle" font-family="IBM Plex Mono, monospace" font-size="15" letter-spacing="1" fill="#8d887d">MAIN IMAGE SLOT</text>
+        </svg>
+      {%- endif -%}
+    </div>
+
+    <svg class="ark__lines" data-ark-lines aria-hidden="true" focusable="false"></svg>
+
+    {%- comment -%} ---------------- LEFT: INFORMATION ---------------- {%- endcomment -%}
+    <aside class="ark__left" aria-label="Product information">
+      <section class="ark-panel ark-panel--l">
+        <div class="ark__head" data-ark-title>
+          <h1 class="ark__title">{{ product.title | escape }}</h1>
+          <p class="ark__priceline">
+            <span class="ark__price">
+              <span data-ark-price>{{ v.price | money }}</span>
+              <s class="ark__was" data-ark-was {% unless v.compare_at_price > v.price %}hidden{% endunless %}>{{ v.compare_at_price | money }}</s>
+            </span>
+            <span class="ark__tag" data-ark-tag {% unless is_pre or v.available == false %}hidden{% endunless %}>
+              {%- if v.available == false -%}Sold out{%- else -%}Pre-order{%- endif -%}
+            </span>
+          </p>
+        </div>
+
+        <div class="ark__scroll" data-ark-scroll>
+          {%- if product.description != blank -%}
+            <div class="ark-acc is-open" data-acc="description">
+              <button class="ark-acc__h" type="button" aria-expanded="true" aria-controls="ark-acc-description"><span>Description</span><span class="ark-acc__i" aria-hidden="true"></span></button>
+              <div class="ark-acc__p" id="ark-acc-description"><div class="ark-acc__in"><div class="ark__desc rte">{{ product.description }}</div></div></div>
+            </div>
+          {%- endif -%}
+
+          {%- if materials != blank -%}
+            <div class="ark-acc" data-acc="materials">
+              <button class="ark-acc__h" type="button" aria-expanded="false" aria-controls="ark-acc-materials"><span>Materials</span><span class="ark-acc__i" aria-hidden="true"></span></button>
+              <div class="ark-acc__p" id="ark-acc-materials" inert><div class="ark-acc__in"><div class="ark__desc rte">{{ materials }}</div></div></div>
+            </div>
+          {%- endif -%}
+
+          {%- if size_page != blank or size_meta != blank -%}
+            <div class="ark-acc" data-acc="size">
+              <button class="ark-acc__h" type="button" aria-expanded="false" aria-controls="ark-acc-size"><span>Size guide</span><span class="ark-acc__i" aria-hidden="true"></span></button>
+              <div class="ark-acc__p" id="ark-acc-size" inert><div class="ark-acc__in"><div class="ark__desc rte">{%- if size_page != blank -%}{{ size_page.content }}{%- else -%}{{ size_meta }}{%- endif -%}</div></div></div>
+            </div>
+          {%- endif -%}
+
+          {%- if packaging != blank -%}
+            <div class="ark-acc" data-acc="packaging">
+              <button class="ark-acc__h" type="button" aria-expanded="false" aria-controls="ark-acc-packaging"><span>Packaging</span><span class="ark-acc__i" aria-hidden="true"></span></button>
+              <div class="ark-acc__p" id="ark-acc-packaging" inert><div class="ark-acc__in"><div class="ark__desc rte">{{ packaging }}</div></div></div>
+            </div>
+          {%- endif -%}
+
+          {%- if section.settings.shipping_text != blank or shop.shipping_policy != blank or shop.refund_policy != blank -%}
+            <div class="ark-acc" data-acc="shipping">
+              <button class="ark-acc__h" type="button" aria-expanded="false" aria-controls="ark-acc-shipping"><span>Shipping &amp; returns</span><span class="ark-acc__i" aria-hidden="true"></span></button>
+              <div class="ark-acc__p" id="ark-acc-shipping" inert><div class="ark-acc__in"><div class="ark__desc rte">
+                {{ section.settings.shipping_text }}
+                {%- if shop.shipping_policy != blank or shop.refund_policy != blank -%}
+                  <p>
+                    {%- if shop.shipping_policy != blank -%}<a href="{{ shop.shipping_policy.url }}">Shipping policy</a>{%- endif -%}
+                    {%- if shop.shipping_policy != blank and shop.refund_policy != blank %} · {% endif -%}
+                    {%- if shop.refund_policy != blank -%}<a href="{{ shop.refund_policy.url }}">Refund policy</a>{%- endif -%}
+                  </p>
+                {%- endif -%}
+              </div></div></div>
+            </div>
+          {%- endif -%}
+        </div>
+      </section>
+
+      {%- assign thumbs = product.media | where: 'media_type', 'image' -%}
+      {%- if thumbs.size > 1 or cutout != blank -%}
+        <ul class="ark__thumbs" data-ark-thumbs aria-label="Product images">
+          {%- if cutout != blank -%}
+            {%- assign ci = cutout.preview_image | default: cutout -%}
+            <li><button type="button" class="ark-th is-on" aria-current="true" aria-label="Image 1"
+              data-src="{{ ci | image_url: width: 1200 }}"
+              data-srcset="{{ ci | image_url: width: 600 }} 600w, {{ ci | image_url: width: 900 }} 900w, {{ ci | image_url: width: 1200 }} 1200w, {{ ci | image_url: width: 1800 }} 1800w"
+              data-w="{{ ci.width }}" data-h="{{ ci.height }}" data-alt="{{ ci.alt | default: product.title | escape }}" data-media="0">
+              <img src="{{ ci | image_url: width: 120 }}" alt="" width="52" height="{{ 52 | times: ci.height | divided_by: ci.width }}" loading="lazy"></button></li>
+          {%- endif -%}
+          {%- for m in thumbs -%}
+            {%- assign mi = m.preview_image -%}
+            <li><button type="button" class="ark-th{% if cutout == blank and forloop.first %} is-on{% endif %}" aria-label="Image {{ forloop.index | plus: 1 }}"
+              data-src="{{ mi | image_url: width: 1200 }}"
+              data-srcset="{{ mi | image_url: width: 600 }} 600w, {{ mi | image_url: width: 900 }} 900w, {{ mi | image_url: width: 1200 }} 1200w, {{ mi | image_url: width: 1800 }} 1800w"
+              data-w="{{ mi.width }}" data-h="{{ mi.height }}" data-alt="{{ mi.alt | default: product.title | escape }}" data-media="{{ m.id }}">
+              <img src="{{ mi | image_url: width: 120 }}" alt="" width="52" height="{{ 52 | times: mi.height | divided_by: mi.width }}" loading="lazy"></button></li>
+          {%- endfor -%}
+        </ul>
+      {%- endif -%}
+    </aside>
+
+    {%- comment -%} ---------------- RIGHT: SIZE + PURCHASE ---------------- {%- endcomment -%}
+    <aside class="ark__right" aria-label="Choose size and buy">
+      <section class="ark-panel ark-panel--r">
+        {%- form 'product', product, id: 'ark-form', class: 'ark-form' -%}
+          <input type="hidden" name="id" value="{{ v.id }}" data-ark-id>
+          <p class="ark__mtitle">{{ product.title | escape }} &mdash; <span data-ark-price>{{ v.price | money }}</span></p>
+
+          {%- unless product.has_only_default_variant -%}
+            {%- for opt in product.options_with_values -%}
+              {%- assign oi = opt.position | minus: 1 -%}
+              <fieldset class="ark-opt" data-ark-opt="{{ oi }}">
+                <legend class="ark-opt__l">{{ opt.name | escape }}</legend>
+                <div class="ark-opt__row" role="radiogroup" aria-label="{{ opt.name | escape }}">
+                  {%- for val in opt.values -%}
+                    {%- assign any_av = false -%}
+                    {%- for vr in product.variants -%}
+                      {%- if vr.options[oi] == val and vr.available -%}{%- assign any_av = true -%}{%- break -%}{%- endif -%}
+                    {%- endfor -%}
+                    <button type="button" role="radio"
+                      class="ark-size ark-notch"
+                      data-val="{{ val | escape }}"
+                      aria-checked="{% if val == opt.selected_value %}true{% else %}false{% endif %}"
+                      {% unless any_av %}disabled{% endunless %}>{{ val | escape }}</button>
+                  {%- endfor -%}
+                </div>
+              </fieldset>
+            {%- endfor -%}
+          {%- endunless -%}
+
+          {%- if model_h != blank and model_s != blank -%}
+            <p class="ark__fit">Model is {{ model_h }} &amp; wears size {{ model_s }}.
+              {%- if size_page != blank or size_meta != blank %} <button type="button" class="ark__link" data-ark-open="size">Size guide</button>{% endif -%}
+            </p>
+          {%- elsif size_page != blank or size_meta != blank -%}
+            <p class="ark__fit"><button type="button" class="ark__link" data-ark-open="size">Size guide</button></p>
+          {%- endif -%}
+
+          <div class="ark__buy" data-ark-buy>
+            {%- if section.settings.show_save -%}
+              <button type="button" class="ark-btn ark-btn--save ark-notch" data-ark-save data-handle="{{ product.handle }}" aria-pressed="false">Save</button>
+            {%- endif -%}
+            <button type="submit" class="ark-btn ark-btn--buy ark-notch" data-ark-submit {% unless v.available %}disabled{% endunless %}>
+              {%- if v.available -%}{%- if is_pre -%}Pre-order{%- else -%}Add to bag{%- endif -%}{%- else -%}Sold out{%- endif -%}
+            </button>
+          </div>
+
+          <p class="ark__status" data-ark-status role="status" aria-live="polite" hidden></p>
+          <div class="ark__pay">{{ form | payment_terms }}</div>
+        {%- endform -%}
+      </section>
+    </aside>
+  </div>
+</div>
+
+<script type="application/json" data-ark-variants>
+[
+{%- for vr in product.variants -%}
+  {%- liquid
+    assign vpre = false
+    if product.tags contains 'preorder' or product.tags contains 'pre-order'
+      assign vpre = true
+    elsif vr.inventory_management != blank and vr.inventory_policy == 'continue' and vr.inventory_quantity <= 0
+      assign vpre = true
+    endif
+    assign onsale = false
+    if vr.compare_at_price > vr.price
+      assign onsale = true
+    endif
+  -%}
+  {"id":{{ vr.id }},"options":{{ vr.options | json }},"available":{{ vr.available | json }},"price":{{ vr.price | money | json }},"compare":{{ vr.compare_at_price | money | json }},"onsale":{{ onsale | json }},"pre":{{ vpre | json }},"media":{{ vr.featured_media.id | default: 0 }}}{% unless forloop.last %},{% endunless %}
+{%- endfor -%}
+]
+</script>
+<script type="application/json" data-ark-config>{"lax":{{ section.settings.left_x | divided_by: 100.0 }},"lay":{{ section.settings.left_y | divided_by: 100.0 }},"rax":{{ section.settings.right_x | divided_by: 100.0 }},"ray":{{ section.settings.right_y | divided_by: 100.0 }}}</script>
+
+<style>
+  .ark{
+    --ark-ink:#0d0d0c; --ark-mute:#7d7a72; --ark-panel:#fff; --ark-line:rgba(255,255,255,.95);
+    --ark-h:max(100svh,720px);
+    --ark-mono:'IBM Plex Mono',ui-monospace,'SF Mono',Menlo,Consolas,monospace;
+    --ark-serif:'Cormorant Garamond','Times New Roman',Times,serif;
+    position:relative;min-height:var(--ark-h);background:var(--ark-bg);color:var(--ark-ink);
+    font-family:var(--ark-mono);font-size:13px;line-height:1.45;letter-spacing:.01em;
+    overflow-x:clip;
+  }
+  .ark *,.ark *::before,.ark *::after{box-sizing:border-box}
+  .ark a{color:inherit;text-decoration:none}
+  .ark button{font:inherit;color:inherit;letter-spacing:inherit;cursor:pointer}
+  .ark :focus-visible{outline:2px solid var(--ark-ink);outline-offset:2px}
+
+  /* notched controls: concave half-circle bitten out of facing edges */
+  .ark-notch{
+    --n:5px;
+    -webkit-mask:radial-gradient(circle var(--n) at 0 50%,#0000 calc(var(--n) - .5px),#000 var(--n)),radial-gradient(circle var(--n) at 100% 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+    -webkit-mask-composite:source-in;
+    mask:radial-gradient(circle var(--n) at 0 50%,#0000 calc(var(--n) - .5px),#000 var(--n)),radial-gradient(circle var(--n) at 100% 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+    mask-composite:intersect;
+  }
+  .ark-notch:first-child{
+    -webkit-mask:radial-gradient(circle var(--n) at 100% 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+    mask:radial-gradient(circle var(--n) at 100% 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+  }
+  .ark-notch:last-child{
+    -webkit-mask:radial-gradient(circle var(--n) at 0 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+    mask:radial-gradient(circle var(--n) at 0 50%,#0000 calc(var(--n) - .5px),#000 var(--n));
+  }
+  .ark-notch:first-child:last-child{-webkit-mask:none;mask:none}
+
+  /* ---------- header ---------- */
+  .ark__bar{
+    position:absolute;z-index:5;inset:0 0 auto 0;
+    display:grid;grid-template-columns:1fr auto 1fr;align-items:start;gap:16px;
+    padding:clamp(14px,1.6vw,24px) clamp(16px,2.2vw,36px);
+  }
+  .ark__brand{justify-self:start;min-width:0}
+  .ark__logo{display:inline-block;font-family:var(--ark-serif);font-weight:600;font-size:clamp(22px,2vw,28px);letter-spacing:.2em;line-height:1;text-transform:uppercase}
+  .ark__crumb{margin-top:8px;font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;display:flex;flex-wrap:wrap;gap:0 6px;white-space:nowrap}
+  .ark__crumb span{opacity:.7}
+  .ark__crumb a:hover{text-decoration:underline;text-underline-offset:3px}
+  .ark__nav{display:flex;gap:6px;justify-content:center}
+  .ark__tools{display:flex;gap:6px;justify-self:end}
+  .ark-chip{
+    display:inline-flex;align-items:center;justify-content:center;height:35px;padding:0 18px;
+    background:#fff;font-size:12px;letter-spacing:.04em;text-transform:uppercase;white-space:nowrap;
+    border-radius:3px;transition:background .15s;
+  }
+  .ark-chip--icon{width:48px;padding:0}
+  .ark-chip:hover{background:#f4f2ee}
+
+  /* ---------- stage (desktop composition) ---------- */
+  .ark__stage{position:relative;height:var(--ark-h);min-height:var(--ark-h)}
+  .ark__model{
+    position:absolute;left:50%;transform:translateX(-50%);
+    top:calc(var(--ark-h) * .115);height:calc(var(--ark-h) * .84);width:min(44vw,680px);
+  }
+  .ark__img,.ark__ph{display:block;width:100%;height:100%;object-fit:contain;object-position:center top}
+  .ark__img.is-blend{mix-blend-mode:multiply}
+  .ark__lines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;overflow:visible}
+  .ark__lines path{fill:none;stroke:var(--ark-line);stroke-width:1.25;vector-effect:non-scaling-stroke}
+
+  .ark__left{
+    position:absolute;z-index:3;left:clamp(16px,1.6vw,40px);width:clamp(300px,26.5vw,470px);
+    top:calc(var(--ark-h) * .292);display:flex;flex-direction:column;gap:26px;
+  }
+  .ark__right{
+    position:absolute;z-index:3;right:clamp(16px,1.6vw,40px);width:clamp(300px,25.5vw,460px);
+    top:calc(var(--ark-h) * .367);
+  }
+
+  /* ---------- panels: stepped white shapes ---------- */
+  .ark-panel{background:var(--ark-panel);position:relative;border-radius:3px}
+  .ark-panel--l{
+    padding:calc(9px + 28px) 28px calc(9px + 22px);
+    clip-path:polygon(0 9px,33% 9px,calc(33% + 9px) 0,100% 0,100% 100%,calc(33% + 9px) 100%,33% calc(100% - 9px),0 calc(100% - 9px));
+  }
+  .ark-panel--r{
+    padding:calc(9px + 22px) 26px calc(9px + 18px);
+    clip-path:polygon(0 0,68% 0,calc(68% + 9px) 9px,100% 9px,100% 100%,calc(27% + 9px) 100%,27% calc(100% - 9px),0 calc(100% - 9px));
+  }
+
+  .ark__title{margin:0;font:500 13px/1.45 var(--ark-mono);letter-spacing:.03em;text-transform:uppercase;max-width:22em}
+  .ark__priceline{margin:2px 0 0;display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+  .ark__price{font-size:13px}
+  .ark__was{margin-left:8px;opacity:.5}
+  .ark__tag{font-size:10.5px;letter-spacing:.06em;text-transform:uppercase;background:#ecebe6;padding:1px 5px}
+  .ark__tag[hidden],.ark__was[hidden]{display:none}
+
+  .ark__scroll{
+    margin-top:34px;overflow:auto;overscroll-behavior:contain;
+    max-height:max(220px,calc(var(--ark-h) * .71 - 290px));
+    scrollbar-width:thin;scrollbar-color:#d6d3cb transparent;
+    padding-right:2px;
+  }
+  .ark-acc__h{
+    display:flex;justify-content:space-between;align-items:center;width:100%;
+    padding:9px 0;background:none;border:0;text-align:left;
+    font-size:12.5px;letter-spacing:.04em;text-transform:uppercase;
+  }
+  .ark-acc__i::before{content:"[+]"}
+  .ark-acc.is-open .ark-acc__i::before{content:"[\2212]"}
+  .ark-acc__p{display:grid;grid-template-rows:0fr;transition:grid-template-rows .26s ease}
+  .ark-acc.is-open .ark-acc__p{grid-template-rows:1fr}
+  .ark-acc__in{overflow:hidden;min-height:0}
+  .ark__desc{font-family:var(--ark-serif);font-weight:500;font-size:clamp(16px,1.25vw,18.5px);line-height:1.34;letter-spacing:0;padding:2px 0 14px;color:#111}
+  .ark__desc p{margin:0 0 .7em}
+  .ark__desc a{text-decoration:underline;text-underline-offset:3px}
+  .ark__desc ul,.ark__desc ol{margin:0 0 .7em;padding-left:1.1em}
+
+  /* ---------- thumbnails ---------- */
+  .ark__thumbs{list-style:none;margin:0 0 0 10px;padding:0;display:flex;gap:6px;flex-wrap:wrap}
+  .ark-th{position:relative;display:block;width:52px;padding:0;background:none;border:0;opacity:.78;transition:opacity .15s}
+  .ark-th img{display:block;width:52px;height:auto;max-height:62px;object-fit:contain}
+  .ark-th:hover,.ark-th.is-on{opacity:1}
+  .ark-th::after{
+    content:"";position:absolute;inset:-5px;pointer-events:none;opacity:0;transition:opacity .15s;
+    --b:1.5px;--l:7px;
+    background:
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 0 0/var(--l) var(--b) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 0 0/var(--b) var(--l) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 100% 0/var(--l) var(--b) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 100% 0/var(--b) var(--l) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 0 100%/var(--l) var(--b) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 0 100%/var(--b) var(--l) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 100% 100%/var(--l) var(--b) no-repeat,
+      linear-gradient(var(--ark-ink),var(--ark-ink)) 100% 100%/var(--b) var(--l) no-repeat;
+  }
+  .ark-th.is-on::after{opacity:1}
+
+  /* ---------- size + buy ---------- */
+  .ark-form{margin:0}
+  .ark-opt{border:0;margin:0 0 14px;padding:0;min-width:0}
+  .ark-opt__l{padding:0;margin:0 0 10px;font-size:12.5px;letter-spacing:.04em;text-transform:uppercase}
+  .ark-opt__row{display:flex;gap:6px;flex-wrap:wrap}
+  .ark .ark-size{
+    flex:1 1 0;min-width:64px;height:37px;padding:0 8px;border:0;border-radius:3px;
+    background:#ebe9e4;color:var(--ark-ink);font-size:12.5px;letter-spacing:.03em;text-transform:uppercase;
+    transition:background .15s,color .15s;
+  }
+  .ark-size:hover:not(:disabled){background:#dedbd3}
+  .ark-size[aria-checked="true"]{background:var(--ark-ink);color:#fff}
+  .ark-size:disabled{opacity:.38;cursor:not-allowed;text-decoration:line-through}
+  .ark__mtitle{display:none}
+  .ark__fit{margin:0 0 20px;font-size:11px;letter-spacing:.03em;text-transform:uppercase;color:var(--ark-mute)}
+  .ark__link{background:none;border:0;padding:0;color:inherit;text-decoration:underline;text-underline-offset:3px;text-transform:uppercase;font-size:inherit}
+  .ark__buy{display:flex;gap:6px;margin-top:6px}
+  .ark .ark-btn{height:36px;border:0;border-radius:3px;background:var(--ark-ink);color:#fff;font-size:12.5px;letter-spacing:.05em;text-transform:uppercase;transition:opacity .15s}
+  .ark-btn--save{flex:0 0 auto;min-width:60px;padding:0 14px 0 14px;text-align:left}
+  .ark-btn--buy{flex:1 1 auto}
+  .ark-btn:hover:not(:disabled){opacity:.86}
+  .ark-btn:disabled{opacity:.45;cursor:not-allowed}
+  .ark-btn--save[aria-pressed="true"]{background:#34322d}
+  .ark__status{margin:12px 0 0;font-size:11px;letter-spacing:.03em;text-transform:uppercase}
+  .ark__status a{text-decoration:underline;text-underline-offset:3px}
+  .ark__status.is-err{color:#8d1d28}
+  .ark__pay{margin-top:14px;font-size:10.5px;letter-spacing:.03em;text-transform:uppercase;color:var(--ark-mute)}
+  .ark__pay:empty{display:none}
+  .ark__pay shopify-payment-terms{--shopify-payment-terms-font-size:10.5px}
+
+  /* ---------- tablet: model on top, two panels side by side ---------- */
+  @media (max-width:999px){
+    .ark{--ark-h:auto}
+    .ark__bar{grid-template-columns:1fr auto;grid-template-areas:"brand tools" "nav nav";row-gap:14px}
+    .ark__brand{grid-area:brand}.ark__tools{grid-area:tools}.ark__nav{grid-area:nav;justify-content:flex-start;flex-wrap:wrap}
+    .ark__stage{height:auto;min-height:0;padding:clamp(150px,22vw,170px) clamp(16px,3vw,32px) 40px;
+      display:grid;grid-template-columns:1fr 1fr;gap:22px;align-items:start}
+    .ark__model{position:static;transform:none;grid-column:1 / -1;width:100%;height:clamp(420px,78vw,720px)}
+    .ark__lines{display:none}
+    .ark__left{display:contents}
+    .ark__left .ark-panel--l{grid-column:1;grid-row:3}
+    .ark__thumbs{grid-column:1 / -1;grid-row:2;margin:0;justify-content:center}
+    .ark__right{position:static;width:auto;grid-column:2;grid-row:3}
+    .ark__scroll{max-height:360px}
+  }
+  /* ---------- mobile: model, thumbs, buy, info ---------- */
+  @media (max-width:699px){
+    .ark__stage{grid-template-columns:1fr;gap:18px}
+    .ark__left .ark-panel--l{grid-column:1;grid-row:4}
+    .ark__right{grid-column:1;grid-row:3}
+    .ark__model{height:min(118vw,620px)}
+    .ark__mtitle{display:block;margin:0 0 18px;font-size:12.5px;letter-spacing:.03em;text-transform:uppercase}
+    .ark__nav .ark-chip{flex:1 1 0;padding:0 8px}
+    .ark__nav{width:100%}
+    .ark__scroll{max-height:none;overflow:visible}
+    .ark-panel--l{padding-inline:22px}.ark-panel--r{padding-inline:20px}
+  }
+  @media (prefers-reduced-motion:reduce){.ark-acc__p,.ark-size,.ark-btn,.ark-chip{transition:none}}
+</style>
+
+<script>
+(function () {
+  'use strict';
+  var root = document.querySelector('[data-ark]');
+  if (!root) return;
+  var $ = function (s, c) { return (c || root).querySelector(s); };
+  var $$ = function (s, c) { return Array.prototype.slice.call((c || root).querySelectorAll(s)); };
+
+  var variants = [], cfg = { lax: .02, lay: .29, rax: .98, ray: .48 };
+  try { variants = JSON.parse(document.querySelector('[data-ark-variants]').textContent); } catch (e) {}
+  try { cfg = JSON.parse(document.querySelector('[data-ark-config]').textContent); } catch (e) {}
+
+  /* ---------- accordions ---------- */
+  function setAcc(acc, open) {
+    acc.classList.toggle('is-open', open);
+    var b = $('.ark-acc__h', acc), p = $('.ark-acc__p', acc);
+    b.setAttribute('aria-expanded', open ? 'true' : 'false');
+    if (open) p.removeAttribute('inert'); else p.setAttribute('inert', '');
+    drawSoon();
+  }
+  $$('.ark-acc').forEach(function (acc) {
+    $('.ark-acc__h', acc).addEventListener('click', function () {
+      setAcc(acc, !acc.classList.contains('is-open'));
+    });
+    $('.ark-acc__p', acc).addEventListener('transitionend', drawSoon);
+  });
+  $$('[data-ark-open]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var acc = $('[data-acc="' + b.getAttribute('data-ark-open') + '"]');
+      if (!acc) return;
+      setAcc(acc, true);
+      var sc = $('[data-ark-scroll]');
+      if (sc) setTimeout(function () { sc.scrollTo({ top: acc.offsetTop - 4, behavior: 'smooth' }); }, 60);
+    });
+  });
+
+  /* ---------- gallery ---------- */
+  var main = $('[data-ark-main]');
+  function showThumb(btn) {
+    if (!main || !btn) return;
+    $$('.ark-th').forEach(function (t) { t.classList.remove('is-on'); t.removeAttribute('aria-current'); });
+    btn.classList.add('is-on'); btn.setAttribute('aria-current', 'true');
+    main.src = btn.getAttribute('data-src');
+    main.srcset = btn.getAttribute('data-srcset');
+    main.width = btn.getAttribute('data-w'); main.height = btn.getAttribute('data-h');
+    main.alt = btn.getAttribute('data-alt') || '';
+  }
+  $$('.ark-th').forEach(function (t) { t.addEventListener('click', function () { showThumb(t); }); });
+  if (main) main.addEventListener('load', drawSoon);
+
+  /* ---------- variants ---------- */
+  var form = $('#ark-form');
+  var idInput = $('[data-ark-id]');
+  var optEls = $$('[data-ark-opt]');
+  var sel = [];
+  optEls.forEach(function (fs, i) {
+    var on = $('[aria-checked="true"]', fs);
+    sel[+fs.getAttribute('data-ark-opt')] = on ? on.getAttribute('data-val') : null;
+  });
+  function decode(s) { var t = document.createElement('textarea'); t.innerHTML = s; return t.value; }
+  function norm(s) { return decode(String(s)); }
+
+  function matches(vr, picks, skip) {
+    for (var i = 0; i < picks.length; i++) {
+      if (i === skip || picks[i] == null) continue;
+      if (norm(vr.options[i]) !== norm(picks[i])) return false;
+    }
+    return true;
+  }
+  function find(picks) {
+    for (var i = 0; i < variants.length; i++) if (matches(variants[i], picks, -1)) return variants[i];
+    return null;
+  }
+  function refreshOptionStates() {
+    optEls.forEach(function (fs) {
+      var oi = +fs.getAttribute('data-ark-opt');
+      $$('[data-val]', fs).forEach(function (btn) {
+        var val = btn.getAttribute('data-val');
+        var ok = variants.some(function (vr) { return norm(vr.options[oi]) === norm(val) && vr.available && matches(vr, sel, oi); });
+        btn.disabled = !ok;
+        btn.setAttribute('aria-checked', norm(sel[oi]) === norm(val) ? 'true' : 'false');
+      });
+    });
+  }
+  function applyVariant(vr) {
+    if (!vr) return;
+    idInput.value = vr.id;
+    $$('[data-ark-price]').forEach(function (n) { n.textContent = vr.price; });
+    var was = $('[data-ark-was]');
+    was.textContent = vr.compare; was.hidden = !vr.onsale;
+    var tag = $('[data-ark-tag]');
+    tag.hidden = vr.available && !vr.pre;
+    tag.textContent = vr.available ? 'Pre-order' : 'Sold out';
+    var sub = $('[data-ark-submit]');
+    sub.disabled = !vr.available;
+    sub.textContent = vr.available ? (vr.pre ? 'Pre-order' : 'Add to bag') : 'Sold out';
+    if (vr.media) { var th = $('.ark-th[data-media="' + vr.media + '"]'); if (th) showThumb(th); }
+    try { var u = new URL(location.href); u.searchParams.set('variant', vr.id); history.replaceState(null, '', u); } catch (e) {}
+  }
+  optEls.forEach(function (fs) {
+    var oi = +fs.getAttribute('data-ark-opt');
+    $$('[data-val]', fs).forEach(function (btn) {
+      btn.addEventListener('click', function () {
+        if (btn.disabled) return;
+        sel[oi] = btn.getAttribute('data-val');
+        var vr = find(sel);
+        if (!vr) {  /* keep the clicked value, relax the others to the nearest real variant */
+          vr = variants.filter(function (x) { return norm(x.options[oi]) === norm(sel[oi]) && x.available; })[0] || null;
+          if (vr) sel = vr.options.slice();
+        }
+        refreshOptionStates(); applyVariant(vr);
+      });
+      btn.addEventListener('keydown', function (e) {
+        var k = e.key; if (k !== 'ArrowRight' && k !== 'ArrowLeft') return;
+        var all = $$('[data-val]:not(:disabled)', fs); var i = all.indexOf(btn);
+        var n = all[(i + (k === 'ArrowRight' ? 1 : all.length - 1)) % all.length];
+        if (n) { n.focus(); n.click(); e.preventDefault(); }
+      });
+    });
+  });
+  refreshOptionStates();
+
+  /* ---------- save (this device only; no wishlist app is installed) ---------- */
+  var save = $('[data-ark-save]');
+  if (save) {
+    var KEY = 'izaven:saved', h = save.getAttribute('data-handle');
+    var read = function () { try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; } };
+    var paint = function () { var on = read().indexOf(h) > -1; save.setAttribute('aria-pressed', on ? 'true' : 'false'); save.textContent = on ? 'Saved' : 'Save'; };
+    save.addEventListener('click', function () {
+      var l = read(), i = l.indexOf(h);
+      if (i > -1) l.splice(i, 1); else l.push(h);
+      try { localStorage.setItem(KEY, JSON.stringify(l)); } catch (e) {}
+      paint();
+    });
+    paint();
+  }
+
+  /* ---------- add to bag ---------- */
+  var status = $('[data-ark-status]');
+  function say(html, err) { status.innerHTML = html; status.hidden = !html; status.classList.toggle('is-err', !!err); }
+  if (form) form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var btn = $('[data-ark-submit]'); if (btn.disabled) return;
+    var label = btn.textContent; btn.disabled = true; btn.textContent = 'Adding…'; say('');
+    fetch('/cart/add.js', { method: 'POST', headers: { Accept: 'application/json' }, body: new FormData(form) })
+      .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.description || j.message || 'Could not add'); return j; }); })
+      .then(function () { return fetch('/cart.js', { headers: { Accept: 'application/json' } }).then(function (r) { return r.json(); }); })
+      .then(function (c) {
+        $$('[data-ark-count]').forEach(function (n) { n.textContent = c.item_count; });
+        say('Added to bag. <a href="{{ routes.cart_url }}">View bag</a>');
+        document.dispatchEvent(new CustomEvent('cart:refresh', { bubbles: true }));
+      })
+      .catch(function (err) { say(String(err.message || 'Could not add to bag'), true); })
+      .then(function () { btn.disabled = false; btn.textContent = label; });
+  });
+
+  /* ---------- connector lines ---------- */
+  var stage = $('[data-ark-stage]'), svg = $('[data-ark-lines]');
+  var mq = window.matchMedia('(min-width:1000px)');
+  var raf = 0;
+  function drawSoon() { cancelAnimationFrame(raf); raf = requestAnimationFrame(draw); }
+  function rel(el) {
+    var r = el.getBoundingClientRect(), s = stage.getBoundingClientRect();
+    return { l: r.left - s.left, t: r.top - s.top, r: r.right - s.left, b: r.bottom - s.top, w: r.width, h: r.height };
+  }
+  function imageBox() {
+    var box = rel($('[data-ark-model]'));
+    var nw = main ? (main.naturalWidth || +main.getAttribute('width')) : 0;
+    var nh = main ? (main.naturalHeight || +main.getAttribute('height')) : 0;
+    if (!main) { var ph = $('[data-ark-main-ph]'); nw = 500; nh = 900; }
+    if (!nw || !nh) return box;
+    var sc = Math.min(box.w / nw, box.h / nh), iw = nw * sc, ih = nh * sc;
+    return { l: box.l + (box.w - iw) / 2, t: box.t, w: iw, h: ih };   /* object-position: center top */
+  }
+  function path(sx, sy, ax, ay, dir) {
+    /* dir = 1: panel is on the left of the garment, -1: on the right */
+    var dy = Math.abs(ay - sy), dx = dy * .64;
+    var kx = ax - dir * dx;
+    if ((dir === 1 && kx <= sx + 6) || (dir === -1 && kx >= sx - 6)) return 'M' + sx + ' ' + sy + 'L' + ax + ' ' + ay;
+    return 'M' + sx + ' ' + sy + 'H' + kx + 'L' + ax + ' ' + ay;
+  }
+  function draw() {
+    if (!mq.matches || !stage || !svg) { if (svg) svg.innerHTML = ''; return; }
+    var ib = imageBox(), L = $('.ark-panel--l'), R = $('.ark-panel--r');
+    if (!L || !R) return;
+    var l = rel(L), r = rel(R), t = rel($('[data-ark-title]')), b = rel($('[data-ark-buy]'));
+    var lx = ib.l + ib.w * cfg.lax, ly = ib.t + ib.h * cfg.lay;
+    var rx = ib.l + ib.w * cfg.rax, ry = ib.t + ib.h * cfg.ray;
+    var d1 = path(l.r, t.t + t.h / 2, lx, ly, 1);
+    var d2 = path(r.l, b.t + b.h / 2, rx, ry, -1);
+    svg.setAttribute('viewBox', '0 0 ' + stage.clientWidth + ' ' + stage.clientHeight);
+    svg.innerHTML = '<path d="' + d1 + '"/><path d="' + d2 + '"/>';
+  }
+  if ('ResizeObserver' in window && stage) new ResizeObserver(drawSoon).observe(stage);
+  window.addEventListener('resize', drawSoon);
+  if (mq.addEventListener) mq.addEventListener('change', drawSoon);
+  if (document.fonts && document.fonts.ready) document.fonts.ready.then(drawSoon);
+  window.addEventListener('load', drawSoon);
+  draw();
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Product canvas",
+  "tag": "section",
+  "settings": [
+    { "type": "paragraph", "content": "Floating-panel product canvas. The main image comes from the product metafield custom.cutout_image (transparent PNG/WebP) or the product's first image; thumbnails are the product's media." },
+    { "type": "text", "id": "brand_name", "label": "Brand wordmark", "default": "IZAVEN" },
+    { "type": "link_list", "id": "menu", "label": "Centre navigation (first 3 links)", "default": "main-menu" },
+    { "type": "color", "id": "canvas", "label": "Canvas colour", "default": "#E9E6E1" },
+    { "type": "checkbox", "id": "show_save", "label": "Show Save button (stores on this device)", "default": true },
+    { "type": "checkbox", "id": "blend_white", "label": "Blend a white photo background into the canvas", "info": "Off by default. Multiplies the image against the canvas, which lightens nothing but turns pure white into the canvas colour and slightly shifts light tones. Leave off for transparent PNGs.", "default": false },
+    { "type": "page", "id": "size_guide_page", "label": "Size guide page" },
+    { "type": "richtext", "id": "shipping_text", "label": "Shipping & returns text", "default": "<p>Made to order. Estimated delivery 5–10 days.</p>" },
+    { "type": "header", "content": "Connector lines (position on the image, %)" },
+    { "type": "range", "id": "left_x", "label": "Left line: x", "min": 0, "max": 100, "step": 1, "unit": "%", "default": 2 },
+    { "type": "range", "id": "left_y", "label": "Left line: y", "min": 0, "max": 100, "step": 1, "unit": "%", "default": 29 },
+    { "type": "range", "id": "right_x", "label": "Right line: x", "min": 0, "max": 100, "step": 1, "unit": "%", "default": 98 },
+    { "type": "range", "id": "right_y", "label": "Right line: y", "min": 0, "max": 100, "step": 1, "unit": "%", "default": 48 }
+  ],
+  "presets": [{ "name": "Product canvas" }]
+}
+{% endschema %}

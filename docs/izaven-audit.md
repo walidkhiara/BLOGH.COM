@@ -598,3 +598,18 @@ template JSON parse.
 
 **Not render-tested** — no browser access, no sight of the storefront or the
 images. Nothing here is claimed to have been seen working.
+
+## Round 8 — ARK/8-style product canvas (`product-ark8`)
+
+Draft theme `IZAVEN ARK8 draft` (`gid://shopify/OnlineStoreTheme/208783638853`, unpublished).
+New `sections/product-ark8.liquid`; `templates/product.json` now uses it (previous layout kept as
+`product.classic.json`, editorial as `product.editorial.json`).
+
+Rendered locally with a Liquid mock (`docs/ark8-local-render-harness.py`) in Chromium at 1408x1024,
+820x1100 and 390x844 using a synthetic placeholder figure. NOT rendered against the live store:
+the sandbox cannot reach it, so real product images, Shopify fonts and the water-effect header
+were not seen. Google Fonts were also unreachable locally (fallback fonts rendered).
+Water-effect assets untouched. The effect is a home-page header effect; this page hides the theme header.
+
+Metafields created (Product, namespace `custom`): cutout_image, materials, packaging, size_guide,
+model_height, model_size. Rows with no data are not rendered.

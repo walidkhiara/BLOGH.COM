@@ -1,0 +1,14 @@
+{
+  "sections": {
+    "main": { "type": "product-ark8", "settings": {} },
+    "delivery_estimate": {
+      "type": "delivery-estimate",
+      "settings": { "day_count": "calendar", "production_min": 0, "production_max": 0, "cutoff_hour": 14, "us_min": 5, "us_max": 10, "ca_min": 5, "ca_max": 10, "uk_min": 5, "uk_max": 10, "eu_min": 5, "eu_max": 10, "row_min": 5, "row_max": 10, "tracking_page": "/pages/track-your-order" }
+    },
+    "bundle_upsell": {
+      "type": "bundle-upsell",
+      "settings": { "discount_percent": 30, "max_suggestions": 2, "heading": "Add a second piece, save 30%", "subheading": "Pair it with one of these and 30% comes off the second item automatically.", "fine_print": "Discount applies automatically in the cart. The 30% comes off the lower-priced item." }
+    }
+  },
+  "order": ["main", "delivery_estimate", "bundle_upsell"]
+}
