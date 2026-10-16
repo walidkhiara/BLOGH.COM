@@ -1,6 +1,6 @@
 {
   "sections": {
-    "main": { "type": "product-ark8", "settings": {} },
+    "main": { "type": "product-ark8", "settings": { "studio_image": "shopify://shop_images/izaven-studio.webp" } },
     "delivery_estimate": {
       "type": "delivery-estimate",
       "settings": { "day_count": "calendar", "production_min": 0, "production_max": 0, "cutoff_hour": 14, "us_min": 5, "us_max": 10, "ca_min": 5, "ca_max": 10, "uk_min": 5, "uk_max": 10, "eu_min": 5, "eu_max": 10, "row_min": 5, "row_max": 10, "tracking_page": "/pages/track-your-order" }

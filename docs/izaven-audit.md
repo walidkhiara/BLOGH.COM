@@ -613,3 +613,11 @@ Water-effect assets untouched. The effect is a home-page header effect; this pag
 
 Metafields created (Product, namespace `custom`): cutout_image, materials, packaging, size_guide,
 model_height, model_size. Rows with no data are not rendered.
+
+## Round 9 — liquid studio, bag drawer, buy now
+Draft `IZAVEN liquid studio draft` (`gid://shopify/OnlineStoreTheme/208785736005`, unpublished).
+Studio image uploaded to Files as `izaven-studio.webp` (MediaImage/75609653576005, 1470x1070 — not true 4K);
+set as the default of the section's `studio_image` picker, so it can be swapped in the theme editor.
+Added: glass (.di-pill recipe) on every control and panel, floating bubbles, Buy now (add + /checkout),
+delivery date range (5-10 calendar days, settings), glass bag drawer (qty, remove, discount lines, checkout,
+second-piece suggestions from collection `bundle-eligible`). Rendered locally with mocked cart endpoints only.
