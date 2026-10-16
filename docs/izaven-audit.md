@@ -535,3 +535,66 @@ CDN, so no browser check and no sight of the images.
    not see the image, so I did not guess at garment positions. Edit the
    `hotspots` JSON; x and y are fractions of width and height from top-left.
 4. Import the n8n workflow and add the two credentials to automate steps 2–3.
+
+---
+
+# Round 7 — editorial product page + PDF hotspot cards
+
+Draft: **`IZAVEN editorial draft` (`208782754117`)**.
+
+## Water effect: untouched
+
+`liquid-chrome.css` 7,972 B · `liquid-chrome.js` 5,211 B · `cn-ambient.js`
+4,637 B — byte-identical to the baseline. No colour, keyframe, blur radius,
+opacity or timing was changed. The only related edit remains the body class in
+`layout/theme.liquid` that lets the dormant effect run.
+
+The new wave bands reuse the homepage hero's `.fvh-wave` SVG language rather
+than introducing a competing animation — they are static paths, no motion.
+
+## New: `sections/product-editorial.liquid` + `templates/product.editorial.json`
+
+PDF pages 1–2, as an alternate product template. The existing `product-glass`
+template is untouched, so the current PDP keeps working.
+
+- **Head overflow** — the figure reserves space with `padding-top`, the image is
+  pulled up into it by the same amount and the figure keeps `overflow: visible`.
+  The intrinsic `width`/`height` are the real image dimensions, so the ratio is
+  never distorted and nothing is accidentally cropped.
+- **Three-column editorial composition** — title and scrollable description
+  left, photograph centre, facts right. On mobile the photograph moves first
+  via `order: -1` and the description collapses behind a *Read more* that only
+  appears when the text actually overflows.
+- **Wave price band** — curved divider into a dark band carrying price, options,
+  quantity, Add to bag and Shopify's real dynamic checkout button
+  (`{{ form | payment_button }}`), inside a genuine `{% form 'product' %}`.
+- **Variant resolution** — options resolve to a real variant; a combination with
+  no variant disables purchase rather than guessing. Price and the compare-at
+  strike update from the variant's own data.
+- **Campaign video** — muted autoplay, loop, playsinline, poster via
+  `image_size`, with Play/Pause and Sound buttons that reflect the *real*
+  element state after a refused autoplay. Reduced motion pauses it.
+- **Reviews** — reads `product.metafields.reviews.rating` / `rating_count`.
+  No provider is installed, so it shows an honest empty state. The PDF's
+  "4.5 / 1500+" is not rendered anywhere.
+
+## New: `sections/outfit-hotspot-style.liquid`
+
+PDF page 3's card-and-connector treatment, as a separate section placed after
+`shoppable-outfit` so that 21 KB file is never rewritten. It reads the same
+metaobject, so leaders derive from the same normalised coordinates.
+
+- Ruled info card with a price tag beneath it, near-solid background, no heavy
+  blur so the type stays readable over any photograph
+- Hairline leader whose angle and length are computed per hotspot from
+  `(x,y) → (ax,ay)`, recomputed on resize
+- On phones the cards collapse to compact price markers; the tray below remains
+  the real control
+
+## Verified
+
+File sizes re-read from the draft; Liquid tag pairs balanced; all schema and
+template JSON parse.
+
+**Not render-tested** — no browser access, no sight of the storefront or the
+images. Nothing here is claimed to have been seen working.
