@@ -451,3 +451,87 @@ names. That was the owner's explicit decision, twice stated.
 
 **Still not render-tested** — the sandbox cannot reach the storefront, so no
 browser check of layout or of the add-to-cart call.
+
+---
+
+# Round 6 — shoppable outfit builder
+
+Draft: **`IZAVEN outfit draft` (`208781508933`)**. Page: `/pages/shop-the-look`.
+
+## Architecture chosen, and why
+
+The store is a **pure Shopify Liquid theme** — no backend, no `package.json`,
+no database, no test framework, no hosting. The spec assumed a full stack.
+
+The split that makes it work without building one:
+
+| Half | Where it runs | Status |
+|---|---|---|
+| Customer-facing outfit page | Liquid theme, reads a metaobject | **Built** |
+| AI detection + matching | n8n (`automation/`) | **Written, never run** |
+
+**Shopify Metaobjects replace the database.** Type `shoppable_outfit` with
+`publishable` capability gives structured persistence, a built-in admin editor
+and draft/active status — no app to host.
+
+## What was built
+
+| File / object | Purpose |
+|---|---|
+| `MetaobjectDefinition/49949245765` | `shoppable_outfit`: title, image, video, hotspots (JSON), note |
+| `Metaobject/751374238021` | `izaven-signature-look`, ACTIVE, 3 hotspots |
+| `sections/shoppable-outfit.liquid` | The renderer, 21.8 KB |
+| `templates/page.outfit.json` | Hosts the section |
+| `Page/730723746117` | `/pages/shop-the-look` |
+
+### Spec clauses satisfied
+
+- **6C normalised coordinates** — x/y stored 0–1 against the original image.
+  `object-fit: contain` in a fixed `aspect-ratio` box keeps the painted area
+  equal to the coordinate space, so hotspots hold position at every breakpoint.
+- **6D no invented catalogue data** — the entry stores only a product *handle*.
+  Title, price, variants and stock come from `all_products[handle]` at render
+  time, so they cannot drift.
+- **6D rules 6, 7, 8** — a deleted product renders "Item unavailable", a
+  sold-out product renders "Sold out" and neither becomes a buyable hotspot.
+  Nothing is silently substituted.
+- **6F product panel** — hotspot opens a dialog with image, live price, chosen
+  option and a link out; Escape closes, focus returns to the hotspot.
+- **7A/B/C individual, partial, whole outfit** — per-item checkboxes, live
+  count and subtotal, one `/cart/add.js` call with the selected variants.
+- **7D price calculation** — subtotal summed from variant prices in cents and
+  formatted with the cart's own currency. No hardcoded prices.
+- **7F never claim success** — a failed cart call restores the button and
+  surfaces Shopify's own reason. No fake confirmation.
+- **12 renders without AI** — the page reads saved data only.
+
+## Not done, and why
+
+| Spec part | Blocker |
+|---|---|
+| 2 — verify OpenRouter model | `openrouter.ai` returns 403 at this environment's egress proxy. Model availability and vision support are **unverified**. |
+| 6A/6B — admin upload, AI detection | Needs the n8n workflow running. Written, never executed. |
+| 11 — drag-to-move hotspot editor | Coordinates are edited as JSON in the metaobject entry. A drag editor needs an embedded app. |
+| 15 — automated tests | No test framework and no runtime for Liquid in this repo. Nothing was run, so nothing is claimed. |
+| 5C — reviews | No review provider is installed; no review metafields exist. Nothing fabricated. |
+
+## Verified
+
+- Theme files re-read at expected sizes; Liquid tag pairs balanced; schema and
+  template JSON parse.
+- Metaobject re-read: ACTIVE, 3 hotspots, image reference resolves.
+- Products confirmed ACTIVE, published, in stock:
+  polo $35.00 · sweatpants $62.88 · canvas shoes $59.99 → **$157.87**.
+
+**Not render-tested.** The sandbox cannot reach the storefront or the Shopify
+CDN, so no browser check and no sight of the images.
+
+## Owner actions
+
+1. Preview `/pages/shop-the-look` on the draft theme.
+2. Swap the image for a real outfit photograph —
+   *Content → Metaobjects → Shoppable outfit → The Signature Look*.
+3. **Fix the hotspot coordinates.** The current x/y are placeholders: I could
+   not see the image, so I did not guess at garment positions. Edit the
+   `hotspots` JSON; x and y are fractions of width and height from top-left.
+4. Import the n8n workflow and add the two credentials to automate steps 2–3.
