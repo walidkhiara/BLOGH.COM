@@ -79,6 +79,9 @@
       {%- else -%}
         <img src="{{ 'izaven-studio.webp' | asset_url }}" alt="" decoding="async" width="1470" height="1070">
       {%- endif -%}
+      {%- if section.settings.studio_video != blank -%}
+        {{ section.settings.studio_video | video_tag: autoplay: true, loop: true, muted: true, controls: false, playsinline: true, class: 'ark__bgvid', image_size: '1600x' }}
+      {%- endif -%}
     </div>
   {%- endif -%}
   <div class="ark__bubbles" aria-hidden="true">
@@ -95,32 +98,34 @@
 
   {%- comment -%} ---------------- HEADER ---------------- {%- endcomment -%}
   <header class="ark__bar">
-    <div class="ark__brand">
-      <a class="ark__logo" href="{{ routes.root_url }}">{{ section.settings.brand_name | escape }}</a>
+    <div class="ark-di ark-di--left">
+      <a href="{{ routes.all_products_collection_url }}" class="ark-pill ark-pill--sm"><span class="ark-liquid"></span><span class="ark-shine"></span><span class="ark-label">Shop</span></a>
       <nav class="ark__crumb" aria-label="Breadcrumb">
         <a href="{{ routes.root_url }}">Home</a><span aria-hidden="true">&gt;</span><a href="{{ routes.all_products_collection_url }}">Shop</a>
         {%- if crumb_col != blank -%}<span aria-hidden="true">&gt;</span><a href="{{ crumb_col.url }}">{{ crumb_col.title | escape }}</a>{%- endif -%}
       </nav>
     </div>
-
-    {%- if nav != blank and nav.links.size > 0 -%}
-      <nav class="ark__nav" aria-label="Primary">
-        {%- for link in nav.links limit: 3 -%}
-          <a class="ark-chip ark-notch" href="{{ link.url }}">{{ link.title | escape }}</a>
-        {%- endfor -%}
-      </nav>
-    {%- endif -%}
-
-    <div class="ark__tools">
-      <a class="ark-chip ark-notch ark-chip--icon" href="{{ routes.search_url }}" aria-label="Search">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-4-4"/></svg>
+    <div class="ark-di ark-di--center">
+      <a href="{{ routes.root_url }}" class="ark-pill ark-pill--logo" aria-label="{{ section.settings.brand_name | escape }} home">
+        <span class="ark-liquid"></span><span class="ark-shine"></span>
+        {%- assign ark_logo = section.settings.logo | default: shop.brand.logo -%}
+        {%- if ark_logo != blank -%}
+          <img class="ark-logo" src="{{ ark_logo | image_url: height: 96 }}" alt="" width="{{ ark_logo.width | times: 24 | divided_by: ark_logo.height | at_most: 150 }}" height="24" decoding="async">
+        {%- else -%}
+          <span class="ark-name">{{ section.settings.brand_name | escape }}</span>
+        {%- endif -%}
       </a>
-      {%- if customer -%}
-        <a class="ark-chip ark-notch" href="{{ routes.account_url }}">Account</a>
-      {%- else -%}
-        <a class="ark-chip ark-notch" href="{{ routes.account_login_url }}">Log in</a>
-      {%- endif -%}
-      <a class="ark-chip ark-notch" href="{{ routes.cart_url }}" data-ark-bag aria-label="Bag, {{ cart.item_count }} items">Bag/<span data-ark-count>{{ cart.item_count }}</span></a>
+    </div>
+    <div class="ark-di ark-di--right">
+      <a href="{{ routes.search_url }}" class="ark-pill ark-pill--ico" aria-label="Search">
+        <span class="ark-liquid"></span><span class="ark-shine"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+      </a>
+      <a href="{{ routes.cart_url }}" class="ark-pill ark-pill--ico" data-ark-bag aria-label="Bag, {{ cart.item_count }} items">
+        <span class="ark-liquid"></span><span class="ark-shine"></span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 01-8 0"/></svg>
+        <span class="ark-count" data-ark-count{% if cart.item_count == 0 %} hidden{% endif %}>{{ cart.item_count }}</span>
+      </a>
     </div>
   </header>
 
@@ -569,7 +574,7 @@
        --lq-rim:rgba(255,255,255,.72);--lq-blur:blur(26px) saturate(1.8) brightness(1.04)}
   .ark__bg{position:absolute;inset:0;z-index:0;overflow:hidden;pointer-events:none}
   .ark__bg img{display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%;opacity:var(--ark-studio-op,1)}
-  .ark__stage,.ark__bar{z-index:2}
+  .ark__stage{z-index:2}
   .ark__model{z-index:1}
 
   .ark__bubbles{position:absolute;inset:0;z-index:1;pointer-events:none;overflow:hidden}
@@ -682,6 +687,55 @@
     .ark-bub,.ark-chip::before,.ark-chip::after,.ark .ark-size::before,.ark .ark-size::after,.ark .ark-btn::before,.ark .ark-btn::after,.ark-panel::before,.ark-panel::after,.ark-cart__panel::before,.ark-cart__panel::after{animation:none!important}
     .ark-cart__panel,.ark-cart__scrim{transition:none}
   }
+  /* ===== v3: page-wide studio, home-style header, themed lower sections ===== */
+  .ark{background:transparent}
+  .ark__bg{position:fixed;inset:0;z-index:-1}
+  .ark__bg img,.ark__bgvid{position:absolute;inset:0;display:block;width:100%;height:100%;object-fit:cover;object-position:50% 100%}
+  .ark__bgvid{opacity:var(--ark-studio-op,1)}
+  .ark__bar{display:block;position:absolute;z-index:30;inset:0 0 auto 0;height:0;padding:0}
+  .ark-di{position:absolute;top:24px}
+  .ark-di--left{left:24px;display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+  .ark-di--center{left:50%;transform:translateX(-50%)}
+  .ark-di--right{right:24px;display:flex;gap:10px}
+  .ark-pill{position:relative;display:inline-flex;align-items:center;justify-content:center;border-radius:999px;text-decoration:none;overflow:hidden;cursor:pointer;
+    transition:transform .32s cubic-bezier(.16,1,.3,1);
+    background:linear-gradient(160deg,rgba(255,255,255,.55) 0%,rgba(255,255,255,.25) 40%,rgba(200,184,154,.30) 80%,rgba(200,184,154,.45) 100%);
+    backdrop-filter:blur(32px) saturate(2) brightness(1.04);-webkit-backdrop-filter:blur(32px) saturate(2) brightness(1.04);
+    border:1px solid rgba(255,255,255,.70);box-shadow:0 8px 32px rgba(160,144,120,.22),0 1px 0 rgba(255,255,255,.80) inset;color:rgba(30,26,22,.85)}
+  .ark-pill:hover{transform:scale(1.06) translateY(-2px)}
+  .ark-pill--sm{padding:10px 22px}
+  .ark-pill--logo{padding:10px 32px}
+  .ark-pill--ico{width:44px;height:44px}
+  .ark-pill--ico svg{position:relative;z-index:1;width:19px;height:19px}
+  .ark-label{position:relative;z-index:1;font:700 11px/1.45 var(--font-body--family,'Inter'),-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:2.8px;text-transform:uppercase;white-space:nowrap}
+  .ark-name{position:relative;z-index:1;font:700 13px/1.45 var(--font-body--family,'Inter'),-apple-system,'Segoe UI',Roboto,sans-serif;letter-spacing:2px;text-transform:uppercase;white-space:nowrap}
+  .ark-logo{position:relative;z-index:1;height:24px;width:auto;max-width:150px;object-fit:contain;display:block}
+  .ark-count{position:absolute;top:2px;right:2px;z-index:2;min-width:17px;height:17px;padding:0 4px;border-radius:999px;background:#1e1a16;color:#f5f0e8;font:700 10px/1 var(--font-body--family,'Inter'),sans-serif;display:flex;align-items:center;justify-content:center}
+  .ark-count[hidden]{display:none}
+  .ark-liquid{position:absolute;inset:0;border-radius:999px;pointer-events:none;z-index:0;background:radial-gradient(ellipse 120% 180% at 50% -30%,rgba(255,255,255,.35) 0%,transparent 65%);animation:ark-breathe 5s ease-in-out infinite}
+  .ark-shine{position:absolute;top:0;left:-60%;width:35%;height:100%;pointer-events:none;z-index:0;background:linear-gradient(115deg,transparent,rgba(255,255,255,.55) 50%,transparent);transform:skewX(-15deg);animation:ark-shine 8s ease-in-out infinite}
+  .ark__crumb{margin:0 0 0 6px;text-shadow:0 0 12px rgba(255,255,255,.95),0 0 3px rgba(255,255,255,.8)}
+
+  /* lower sections (delivery, bundle, footer) picked up into the same glass */
+  body:has(.ark) .shopify-section:has(.izd),body:has(.ark) .shopify-section:has(.izb){padding:0 clamp(16px,4vw,48px)}
+  body:has(.ark) .izd,body:has(.ark) .izb{max-width:1100px;margin:22px auto;
+    background:linear-gradient(160deg,rgba(255,255,255,.62) 0%,rgba(255,255,255,.30) 42%,rgba(214,228,242,.34) 82%,rgba(200,184,154,.30) 100%);
+    -webkit-backdrop-filter:blur(26px) saturate(1.8) brightness(1.04);backdrop-filter:blur(26px) saturate(1.8) brightness(1.04);
+    border:1px solid rgba(255,255,255,.72);box-shadow:0 8px 32px rgba(120,130,140,.18),0 1px 0 rgba(255,255,255,.85) inset;border-radius:20px}
+  body:has(.ark) .izb__item{background:rgba(255,255,255,.42);border-color:rgba(255,255,255,.75);border-radius:16px}
+  body:has(.ark) .izb__media{background:rgba(255,255,255,.5)}
+  body:has(.ark) .izb__add{background:rgba(18,22,28,.88)}
+  body:has(.ark) .section-background{background:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,.6))!important;-webkit-backdrop-filter:blur(26px) saturate(1.6);backdrop-filter:blur(26px) saturate(1.6);border-top:1px solid rgba(255,255,255,.7)}
+
+  @media (max-width:999px){
+    .ark__stage{padding-top:clamp(112px,16vw,128px)}
+  }
+  @media (max-width:600px){
+    .ark-di--left{display:none}
+    .ark-di{top:20px}.ark-di--right{right:14px}
+    .ark__stage{padding-top:96px}
+  }
+  @media (prefers-reduced-motion:reduce){.ark-liquid,.ark-shine{animation:none!important}.ark-pill:hover{transform:none}}
 </style>
 
 
@@ -848,7 +902,7 @@
     catch (e) { return '$' + (c / 100).toFixed(2); }
   }
   function mk(tag, cls, text) { var n = document.createElement(tag); if (cls) n.className = cls; if (text != null) n.textContent = text; return n; }
-  function setCount(n) { $$('[data-ark-count]').forEach(function (e) { e.textContent = n; }); }
+  function setCount(n) { $$('[data-ark-count]').forEach(function (e) { e.textContent = n; e.hidden = !n; }); }
   function cartFetch(url, body) {
     return fetch(url, body ? { method: 'POST', headers: { 'Content-Type': 'application/json', Accept: 'application/json' }, body: JSON.stringify(body) } : { headers: { Accept: 'application/json' } })
       .then(function (r) { return r.json().then(function (j) { if (!r.ok) throw new Error(j.description || j.message || 'Bag error'); return j; }); });
@@ -962,6 +1016,9 @@
     submitToCart(nowBtn, function () { window.location.href = cc.checkout || '/checkout'; });
   });
 
+  var bgv = $('.ark__bgvid');
+  if (bgv && window.matchMedia('(prefers-reduced-motion:reduce)').matches) { bgv.removeAttribute('autoplay'); try { bgv.pause(); } catch (e) {} }
+
   /* ---------- connector lines ---------- */
   var stage = $('[data-ark-stage]'), svg = $('[data-ark-lines]');
   var mq = window.matchMedia('(min-width:1000px)');
@@ -1024,6 +1081,8 @@
     { "type": "header", "content": "Studio background" },
     { "type": "checkbox", "id": "show_studio", "label": "Show studio background", "default": true },
     { "type": "image_picker", "id": "studio_image", "label": "Studio background image", "info": "Leave empty to use the bundled IZAVEN studio image. For 4K sharpness upload an image at least 3840 px wide." },
+    { "type": "video", "id": "studio_video", "label": "Studio background video (optional)", "info": "Plays muted and looped behind the whole page, over the image. Upload a short, compressed MP4 (under ~10 MB). Leave empty for the image only." },
+    { "type": "image_picker", "id": "logo", "label": "Logo in the top pill (uses the store logo if empty)" },
     { "type": "range", "id": "studio_opacity", "label": "Studio image strength", "min": 0, "max": 100, "step": 5, "unit": "%", "default": 100 },
     { "type": "header", "content": "Delivery" },
     { "type": "range", "id": "delivery_min", "label": "Delivery: earliest (days)", "min": 1, "max": 60, "step": 1, "default": 5 },

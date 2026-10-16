@@ -621,3 +621,15 @@ set as the default of the section's `studio_image` picker, so it can be swapped 
 Added: glass (.di-pill recipe) on every control and panel, floating bubbles, Buy now (add + /checkout),
 delivery date range (5-10 calendar days, settings), glass bag drawer (qty, remove, discount lines, checkout,
 second-piece suggestions from collection `bundle-eligible`). Rendered locally with mocked cart endpoints only.
+
+## Round 10 — page-wide studio, home-style header, header click fix
+Draft `IZAVEN studio v3 draft` (`gid://shopify/OnlineStoreTheme/208787145029`, unpublished).
+- Root cause of "header buttons not working": my own `.ark__stage,.ark__bar{z-index:2}` rule put the full-height stage
+  (later in the DOM) on top of the header, so clicks never reached it. Header now z-index 30; verified locally with
+  `elementFromPoint` on every pill and a real click opening the bag drawer.
+- Header is the home `.di-pill` header (Shop / logo / search + bag), same values as `hero-video-glass`.
+- Studio background is now `position:fixed` behind the whole page; delivery estimate, bundle offer and footer
+  `.section-background` get the same glass via `body:has(.ark)` overrides (their own files untouched).
+- New optional `studio_video` section setting (Shopify-hosted video, muted loop, paused for reduced motion).
+- NOTE: the deployed `sections/product-ark8.liquid` is a hand-compacted variant of `theme/sections/product-ark8.liquid`
+  (dead v1 chip/header CSS removed); behaviour is the same. Locally rendered/clicked: the fuller repo version only.
