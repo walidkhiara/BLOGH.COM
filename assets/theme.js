@@ -758,25 +758,24 @@
   const initVideos = (root = document) => {
     const videos = $$('[data-bg-video] video', root);
     if (!videos.length) return;
-    const setToggle = (section, paused) => {
-      const btn = section && $('[data-video-toggle]', section);
-      if (!btn) return;
-      btn.setAttribute('aria-pressed', String(paused));
-      btn.setAttribute('aria-label', paused ? 'Play background video' : 'Pause background video');
+    // Background videos are brand content, so they play for everyone; the
+    // per-section toggle is the way to stop them.
+    const start = (video) => {
+      if (video.dataset.userPaused === 'true') return;
+      video.muted = true;
+      const p = video.play();
+      if (p && p.catch) p.catch(() => {});
     };
     videos.forEach((video) => {
       video.muted = true;
-      if (reducedMotion.matches) {
-        video.removeAttribute('autoplay');
-        video.pause();
-        video.dataset.userPaused = 'true';
-        setToggle(video.closest('section, .shopify-section'), true);
-      }
+      video.defaultMuted = true;
+      start(video);
+      video.addEventListener('canplay', () => start(video), { once: true });
     });
     if ('IntersectionObserver' in window) {
       const io = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
         if (target.dataset.userPaused === 'true') return;
-        if (isIntersecting) target.play().catch(() => {});
+        if (isIntersecting) start(target);
         else target.pause();
       }), { threshold: 0.05 });
       videos.forEach((v) => io.observe(v));

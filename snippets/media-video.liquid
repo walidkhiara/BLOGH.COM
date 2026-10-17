@@ -1,11 +1,44 @@
 {%- comment -%}
-  Background video from Shopify Files (setting type "video"). Muted, looped,
-  inline; the video's cover image shows until it plays.
+  Background video from Shopify Files (setting type "video").
+  Markup is written by hand rather than with video_tag so that muted /
+  autoplay / playsinline are present in the HTML — browsers only autoplay
+  video that is muted before scripts run.
   - video: video object (required)
   - class: extra class on the wrapper
   - size: poster width, default 1920
 {%- endcomment -%}
-{%- assign poster_size = size | default: 1920 | append: 'x' -%}
+{%- liquid
+  assign poster_width = size | default: 1920
+  assign mp4_sources = video.sources | where: 'format', 'mp4'
+  assign hls = video.sources | where: 'format', 'm3u8' | first
+  assign src_small = nil
+  assign src_mid = nil
+  assign src_large = nil
+  for source in mp4_sources
+    if source.width < 1000
+      assign src_small = source
+    elsif source.width <= 1400
+      assign src_mid = source
+    elsif source.width <= 1920
+      assign src_large = source
+    endif
+  endfor
+  assign src_default = src_mid | default: src_large | default: src_small | default: mp4_sources.first
+-%}
 <div class="bg-video {{ class }}" data-bg-video>
-  {{ video | video_tag: autoplay: true, loop: true, muted: true, playsinline: true, controls: false, preload: 'metadata', image_size: poster_size }}
+  <video
+    autoplay
+    muted
+    loop
+    playsinline
+    disablepictureinpicture
+    preload="auto"
+    {% if video.preview_image %}poster="{{ video.preview_image | image_url: width: poster_width }}"{% endif %}
+    aria-hidden="true"
+  >
+    {%- if src_small and src_small.url != src_default.url -%}<source src="{{ src_small.url }}" type="video/mp4" media="(max-width: 749px)">{%- endif -%}
+    {%- if src_large and src_large.url != src_default.url -%}<source src="{{ src_large.url }}" type="video/mp4" media="(min-width: 1400px)">{%- endif -%}
+    {%- if src_default -%}<source src="{{ src_default.url }}" type="video/mp4">{%- endif -%}
+    {%- if hls -%}<source src="{{ hls.url }}" type="application/x-mpegURL">{%- endif -%}
+  </video>
 </div>

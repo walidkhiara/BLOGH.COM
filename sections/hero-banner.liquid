@@ -5,7 +5,7 @@
   assign focal = desktop.presentation.focal_point | default: '50% 50%'
   assign focal_m = mobile.presentation.focal_point | default: focal
   assign video = s.video
-  assign video_m = s.video_mobile | default: s.video
+  assign video_m = s.video_mobile
   assign has_media = false
   if desktop or video
     assign has_media = true
@@ -15,7 +15,7 @@
   style="--hero-h: {{ s.height }}svh; --hero-h-mobile: {{ s.height_mobile }}svh; --scrim: {{ s.overlay | divided_by: 100.0 }}; --focal: {{ focal_m }}; --focal-desktop: {{ focal }}; --hero-fg: {{ s.text_color }};{% if s.position == 'middle-left' %} --scrim-dir: 90deg;{% endif %}"
   aria-label="{{ s.heading | strip_html | escape }}">
   {%- if video -%}
-    {%- if video_m != video -%}
+    {%- if video_m != blank and video_m.id != video.id -%}
       <div class="hero__media hero__media--mobile">{% render 'media-video', video: video_m, size: 1200 %}</div>
     {%- endif -%}
     <div class="hero__media hero__media--desktop">{% render 'media-video', video: video %}</div>
