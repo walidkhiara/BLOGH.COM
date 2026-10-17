@@ -38,6 +38,18 @@
     assign m_src = section.settings.mobile_image | image_url: width: 1200
   endif
 
+  assign scale_d = section.settings.placement_scale_desktop | default: 100 | times: 1.0 | divided_by: 100
+  assign scale_m = section.settings.placement_scale_mobile | default: 100 | times: 1.0 | divided_by: 100
+  assign ratio_key = section.settings.featured_image_ratio | default: 'portrait'
+  assign ratio_css = '4 / 5'
+  if ratio_key == 'square'
+    assign ratio_css = '1 / 1'
+  elsif ratio_key == 'landscape'
+    assign ratio_css = '4 / 3'
+  elsif ratio_key == 'original'
+    assign ratio_css = 'auto'
+  endif
+
   assign lines = section.settings.layout | newline_to_br | split: '<br />'
   assign idx = 0
   assign fc = section.settings.featured_collection | default: collections.all
@@ -57,7 +69,7 @@
   <div
     class="iz-stage"
     data-iz-stage
-    style="--iz-ar-d: {{ ar_d }}; --iz-ar-m: {{ ar_m }};"
+    style="--iz-ar-d: {{ ar_d }}; --iz-ar-m: {{ ar_m }}; --iz-sd: {{ scale_d }}; --iz-sm: {{ scale_m }};"
   >
     <picture>
       <source media="(max-width: 749px)" srcset="{{ m_src }}">
@@ -197,7 +209,11 @@
   <template data-iz-layout>{{ section.settings.layout | escape }}</template>
 
   {%- if section.settings.featured_count > 0 and fc.products_count > 0 -%}
-    <section class="iz-feature" aria-labelledby="iz-feature-{{ section.id }}">
+    <section
+      class="iz-feature"
+      aria-labelledby="iz-feature-{{ section.id }}"
+      style="--izc-d: {{ section.settings.featured_columns_desktop | default: 4 }}; --izc-m: {{ section.settings.featured_columns_mobile | default: 2 }}; --izc-ratio: {{ ratio_css }}; --izc-fit: {{ section.settings.featured_image_fit | default: 'cover' }}; --izc-size: {{ section.settings.featured_image_size | default: 100 }}%;"
+    >
       <div class="iz-feature__head">
         <h2 id="iz-feature-{{ section.id }}">{{ section.settings.featured_heading | escape }}</h2>
         <a href="{{ fc.url }}">View all</a>
@@ -259,6 +275,7 @@
   /* Stage: its box has the photograph's own aspect ratio, so every % maps to the same point on the picture at any width. */
   .iz-stage {
     --ar: var(--iz-ar-d);
+    --sc: var(--iz-sd);
     position: relative;
     width: 100%;
     aspect-ratio: var(--ar);
@@ -266,9 +283,9 @@
     background: var(--iz-black);
     isolation: isolate;
   }
-  @media (max-width: 749px) { .iz-stage { --ar: var(--iz-ar-m); } }
-  .iz-stage[data-force='mobile'] { --ar: var(--iz-ar-m); }
-  .iz-stage[data-force='desktop'] { --ar: var(--iz-ar-d); }
+  @media (max-width: 749px) { .iz-stage { --ar: var(--iz-ar-m); --sc: var(--iz-sm); } }
+  .iz-stage[data-force='mobile'] { --ar: var(--iz-ar-m); --sc: var(--iz-sm); }
+  .iz-stage[data-force='desktop'] { --ar: var(--iz-ar-d); --sc: var(--iz-sd); }
 
   .iz-bg {
     position: absolute;
@@ -300,7 +317,7 @@
     display: block;
     left: calc(var(--x) * 1%);
     top: calc(var(--y) * 1%);
-    width: calc(var(--w) * 1%);
+    width: calc(var(--w) * var(--sc, 1) * 1%);
     z-index: var(--z);
     opacity: calc(var(--o) / 100);
     transform: translate(-50%, -50%) rotate(calc(var(--r) * 1deg));
@@ -457,12 +474,12 @@
   .iz-feature__head h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--iz-silver); }
   .iz-feature__head a { color: var(--iz-muted); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; }
   .iz-feature__head a:hover { color: var(--iz-warm); }
-  .iz-feature__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: clamp(12px, 2vw, 28px); }
-  @media (max-width: 989px) { .iz-feature__grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
-  @media (max-width: 749px) { .iz-feature__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  .iz-feature__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--izc-d, 4), minmax(0, 1fr)); gap: clamp(12px, 2vw, 28px); }
+  @media (max-width: 989px) { .iz-feature__grid { grid-template-columns: repeat(min(var(--izc-d, 4), 3), minmax(0, 1fr)); } }
+  @media (max-width: 749px) { .iz-feature__grid { grid-template-columns: repeat(var(--izc-m, 2), minmax(0, 1fr)); } }
   .iz-card { display: grid; gap: 6px; color: inherit; text-decoration: none; }
-  .iz-card__media { display: block; aspect-ratio: 4 / 5; overflow: hidden; background: var(--iz-ink); border: 1px solid var(--iz-line); }
-  .iz-card__media img { width: 100%; height: 100%; object-fit: cover; display: block; transition: scale 0.8s var(--iz-ease); }
+  .iz-card__media { display: grid; place-items: center; aspect-ratio: var(--izc-ratio, 4 / 5); overflow: hidden; background: var(--iz-ink); border: 1px solid var(--iz-line); }
+  .iz-card__media img { width: var(--izc-size, 100%); height: var(--izc-size, 100%); object-fit: var(--izc-fit, cover); display: block; transition: scale 0.8s var(--iz-ease); }
   .iz-card:hover .iz-card__media img { scale: 1.04; }
   .iz-card:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 4px; }
   .iz-card__name { margin-top: 8px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
@@ -502,12 +519,27 @@
 
     { "type": "header", "content": "Product placements" },
     { "type": "paragraph", "content": "Edit these visually: open your home page with ?izaven-editor=1 added to the address (for an unpublished theme use the Preview link first, then add &izaven-editor=1). Drag products into place, press Copy layout, then paste it into the box below and save. Up to 20 placements." },
+    { "type": "range", "id": "placement_scale_desktop", "label": "Scale all placements: desktop", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100, "info": "Multiplies the width of every placement on desktop. Use the visual editor to size a single product." },
+    { "type": "range", "id": "placement_scale_mobile", "label": "Scale all placements: mobile", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100 },
     { "type": "textarea", "id": "layout", "label": "Placement layout", "default": "# handle | style | desktop x,y,w,r,z,o,s,v | mobile x,y,w,r,z,o,s,v\nmens-premium-polo | f | 50,64,10,0,3,100,45,1 | 50,47,26,0,3,100,45,1" },
 
     { "type": "header", "content": "Featured products" },
     { "type": "text", "id": "featured_heading", "label": "Heading", "default": "Latest" },
     { "type": "collection", "id": "featured_collection", "label": "Collection", "info": "Empty shows all products." },
-    { "type": "range", "id": "featured_count", "label": "Products to show", "min": 0, "max": 12, "step": 1, "default": 8, "info": "0 hides the strip." }
+    { "type": "range", "id": "featured_count", "label": "Products to show", "min": 0, "max": 12, "step": 1, "default": 8, "info": "0 hides the strip." },
+    { "type": "range", "id": "featured_columns_desktop", "label": "Columns: desktop", "min": 2, "max": 6, "step": 1, "default": 4, "info": "Fewer columns means larger product images." },
+    { "type": "range", "id": "featured_columns_mobile", "label": "Columns: mobile", "min": 1, "max": 3, "step": 1, "default": 2 },
+    { "type": "select", "id": "featured_image_ratio", "label": "Image shape", "default": "portrait", "options": [
+      { "value": "portrait", "label": "Portrait (4:5)" },
+      { "value": "square", "label": "Square" },
+      { "value": "landscape", "label": "Landscape (4:3)" },
+      { "value": "original", "label": "Original proportions" }
+    ] },
+    { "type": "select", "id": "featured_image_fit", "label": "Image fit", "default": "cover", "options": [
+      { "value": "cover", "label": "Fill the frame (may crop)" },
+      { "value": "contain", "label": "Show the whole image" }
+    ] },
+    { "type": "range", "id": "featured_image_size", "label": "Image size inside the frame", "min": 40, "max": 100, "step": 5, "unit": "%", "default": 100, "info": "Below 100% leaves a dark margin around the picture." }
   ],
   "presets": [
     { "name": "Studio showroom" }

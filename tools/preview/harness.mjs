@@ -112,6 +112,7 @@ export function serve(port = 0, defaults_ = {}) {
         if (sc === 'missing') o.layout = '# test\nthis-product-was-deleted | f | 50,50,12,0,1,100,0,1 | 50,50,24,0,1,100,0,1\nmens-premium-polo | f | 50,60,12,0,2,100,0,1 | 50,40,26,0,2,100,0,1';
         if (sc === 'crlf') o.layout = fs.readFileSync(path.join(here, 'layout.default.txt'), 'utf8').replace(/\n/g, '\r\n');
         if (sc === 'nofeature') o.showroom = { featured_count: 0 };
+        if (sc === 'scale') o.showroom = { placement_scale_desktop: 150, placement_scale_mobile: 50, featured_columns_desktop: 3, featured_columns_mobile: 1, featured_image_ratio: 'square', featured_image_fit: 'contain', featured_image_size: 80 };
         if (sc === 'heading') o.showroom = { heading: 'Quiet power', eyebrow: 'Collection 01' };
         res.writeHead(200, { 'content-type': 'text/html' });
         return res.end(await buildPage(o));

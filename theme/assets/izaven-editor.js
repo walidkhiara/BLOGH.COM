@@ -210,6 +210,7 @@
           '<label class="row" style="grid-template-columns:78px 1fr;margin-top:10px"><span>Preview</span><select data-ctl="device" aria-label="Preview width"></select></label>' +
           '<p class="ized-help">Desktop and mobile are separate layouts on separate photographs. Editing one never changes the other.</p></section>' +
         '<section><h3>Placements <span data-count></span></h3><ul class="ized-list" data-list></ul>' +
+          '<div class="ized-two"><button type="button" class="ized-btn" data-act="scale-down" title="Make every placement 10% smaller on this layout">Scale all −10%</button><button type="button" class="ized-btn" data-act="scale-up" title="Make every placement 10% larger on this layout">Scale all +10%</button></div>' +
           '<div style="margin-top:10px"><input type="search" data-ctl="search" placeholder="Add a product from your store…" aria-label="Search products to add"><ul class="ized-results" data-results></ul></div></section>' +
         '<section data-inspector></section>' +
         '<section><details><summary>Layout text (advanced)</summary>' +
@@ -368,7 +369,8 @@
       var c = cfg(it);
       var sw = stage.clientWidth;
       var sh = stage.clientHeight;
-      var w = (c.w / 100) * sw;
+      var sc = parseFloat(getComputedStyle(stage).getPropertyValue('--sc')) || 1;
+      var w = (c.w * sc / 100) * sw;
       var h = el.offsetHeight || w;
       box.hidden = false;
       box.style.left = (c.x / 100) * sw - w / 2 + 'px';
@@ -526,6 +528,14 @@
       select(null);
       renderResults();
       dirtyState();
+    }
+
+    function scaleAll(factor) {
+      if (!items.length) return;
+      pushHistory();
+      items.forEach(function (it) { var c = cfg(it); c.w = clamp(Math.round(c.w * factor * 100) / 100, LIMITS.w[0], LIMITS.w[1]); syncEl(it); });
+      refreshValues(); placeBox(); dirtyState();
+      say('<b>All placements scaled ' + (factor > 1 ? 'up' : 'down') + '</b> on ' + mode + '. Undo reverses it in one step.');
     }
 
     function swapLayer(dir) {
@@ -686,6 +696,8 @@
         case 'save': save(); break;
         case 'copy': copyLayout(); break;
         case 'remove': removeSel(); break;
+        case 'scale-down': scaleAll(0.9); break;
+        case 'scale-up': scaleAll(1.1); break;
         case 'forward': swapLayer(1); break;
         case 'backward': swapLayer(-1); break;
         case 'copy-other':

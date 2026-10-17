@@ -18,11 +18,19 @@ Files live in `theme/` and mirror a Shopify theme (Horizon). Nothing here touche
    Inside the theme editor, the **Open placement editor** button (bottom left) does this for you.
 2. Click a product on the studio, or pick it in the list. Drag it. Use the corner squares to resize and the circle on top to rotate (hold Shift to snap to 15°). Or type exact numbers.
 3. **Desktop / Mobile** switches which layout you are editing. They are stored separately, on separate photographs. Editing one never changes the other. The **Preview** menu shows 1920, 1440, 1024 and 768 px for desktop and 360, 390 and 430 px for mobile.
-4. **Add a product** from the search box. **Remove** only takes it off the studio; the product stays in your store. The eye icon hides it on the current layout only.
-5. **Save draft** keeps your work in this browser and restores it if you refresh.
-6. **Copy layout**, then in the theme editor open **Home → Studio showroom → Placement layout**, paste, and **Save**. That paste is what puts it on the live store.
+4. **Scale all −10% / +10%** resizes every placement on the current layout at once (one undo step). To resize one product, select it and use the corner squares or the **Width / scale** box.
+5. **Add a product** from the search box. **Remove** only takes it off the studio; the product stays in your store. The eye icon hides it on the current layout only.
+6. **Save draft** keeps your work in this browser and restores it if you refresh.
+7. **Copy layout**, then in the theme editor open **Home → Studio showroom → Placement layout**, paste, and **Save**. That paste is what puts it on the live store.
 
 Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer, Delete removes, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
+
+## Sizing without the editor (theme editor settings)
+
+In **Home → Studio showroom**:
+
+- **Scale all placements: desktop / mobile** (50–200%) multiplies every placement's width on that layout.
+- **Latest strip:** columns for desktop (2–6) and mobile (1–3), image shape (portrait, square, landscape, original), image fit (fill or show whole image) and image size inside the frame (40–100%). Fewer columns means larger product images.
 
 ## What it cannot do, and why
 
