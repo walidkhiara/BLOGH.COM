@@ -1,0 +1,28 @@
+{
+  "sections": {
+    "hero_video_cn": {
+      "type": "hero-video-glass",
+      "blocks": {
+        "row_tops": { "type": "row", "settings": { "collection": "men-tops-shirts", "eyebrow": "Unisex" } },
+        "row_bottoms": { "type": "row", "settings": { "collection": "bottoms", "eyebrow": "Unisex" } },
+        "row_shoes": { "type": "row", "settings": { "collection": "sneakers-shoes", "eyebrow": "Footwear" } }
+      },
+      "block_order": [
+        "row_tops",
+        "row_bottoms",
+        "row_shoes"
+      ],
+      "settings": {
+        "video": "shopify://files/videos/1011 (1)(1).mp4",
+        "store_label": "IZAVEN",
+        "headline": "Quiet graphics on heavyweight basics",
+        "headline_alt": "Original artwork, wearable",
+        "support_text": "Sweatpants, half-zips and canvas shoes carrying small original artwork. Made to order, in your size.",
+        "cta_label": "Shop the collection"
+      }
+    }
+  },
+  "order": [
+    "hero_video_cn"
+  ]
+}

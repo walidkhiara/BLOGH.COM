@@ -1,0 +1,710 @@
+{%- comment -%}
+  Section contract.
+  IZAVEN showroom: the studio photograph as a full-bleed stage with product
+  placements layered on top, then a dark featured-products strip.
+
+  Placements are plain text, one per line, so Liquid can render them with no
+  JavaScript (Liquid cannot parse JSON strings):
+
+    handle | style | desktop | mobile | image-url (optional)
+    mens-premium-polo | f | 50,64.5,11,0,2,100,40,1 | 50,47.5,24,0,2,100,40,1
+
+  style:    f = framed (photo has its own background), c = cutout (transparent PNG/WebP)
+  numbers:  x,y,width,rotation,layer,opacity,shadow,visible
+            x and y are the item's centre as % of the stage width/height,
+            width is % of the stage width, opacity and shadow are 0-100.
+  Desktop and mobile are stored separately, because they sit on different photographs.
+
+  Edit visually: open the page with ?izaven-editor=1 (see assets/izaven-editor.js),
+  copy the layout, paste it into "Placement layout" below.
+  @example {% section 'izaven-showroom' %} on templates/index.json
+{%- endcomment -%}
+
+{%- liquid
+  assign ar_d = 1.7769
+  assign ar_m = 0.3865
+  assign d_src = 'izaven-studio-desktop.webp' | asset_url
+  assign m_src = 'izaven-studio-mobile.webp' | asset_url
+  assign d_w = 1672
+  assign d_h = 941
+  if section.settings.desktop_image != blank
+    assign ar_d = section.settings.desktop_image.aspect_ratio
+    assign d_src = section.settings.desktop_image | image_url: width: 2400
+    assign d_w = section.settings.desktop_image.width
+    assign d_h = section.settings.desktop_image.height
+  endif
+  if section.settings.mobile_image != blank
+    assign ar_m = section.settings.mobile_image.aspect_ratio
+    assign m_src = section.settings.mobile_image | image_url: width: 1200
+  endif
+
+  assign scale_d = section.settings.placement_scale_desktop | default: 100 | times: 1.0 | divided_by: 100
+  assign scale_m = section.settings.placement_scale_mobile | default: 100 | times: 1.0 | divided_by: 100
+  assign ratio_key = section.settings.featured_image_ratio | default: 'portrait'
+  assign ratio_css = '4 / 5'
+  if ratio_key == 'square'
+    assign ratio_css = '1 / 1'
+  elsif ratio_key == 'landscape'
+    assign ratio_css = '4 / 3'
+  elsif ratio_key == 'original'
+    assign ratio_css = 'auto'
+  endif
+
+  assign lines = section.settings.layout | newline_to_br | split: '<br />'
+  assign idx = 0
+  assign fc = section.settings.featured_collection | default: collections.all
+-%}
+
+<link rel="preload" as="image" href="{{ d_src }}" media="(min-width: 750px)" fetchpriority="high">
+<link rel="preload" as="image" href="{{ m_src }}" media="(max-width: 749px)" fetchpriority="high">
+
+<div
+  class="iz"
+  id="iz-{{ section.id }}"
+  data-iz-root
+  data-section-id="{{ section.id }}"
+  data-editor-src="{{ 'izaven-editor.js' | asset_url }}"
+  data-shop-handle="{{ shop.permanent_domain }}"
+  data-apply-repo="{{ section.settings.apply_repo | escape }}"
+>
+  <div
+    class="iz-stage"
+    data-iz-stage
+    style="--iz-ar-d: {{ ar_d }}; --iz-ar-m: {{ ar_m }}; --iz-sd: {{ scale_d }}; --iz-sm: {{ scale_m }};"
+  >
+    <picture>
+      <source media="(max-width: 749px)" srcset="{{ m_src }}">
+      <img
+        class="iz-bg"
+        src="{{ d_src }}"
+        alt="{{ section.settings.background_alt | escape }}"
+        width="{{ d_w }}"
+        height="{{ d_h }}"
+        fetchpriority="high"
+        decoding="async"
+      >
+    </picture>
+
+    <div class="iz-layer" data-iz-layer>
+      {%- for raw in lines -%}
+        {%- liquid
+          assign line = raw | strip
+          assign first = line | slice: 0, 1
+          assign is_item = false
+          if line != blank and first != '#' and first != '@' and line contains '|'
+            assign is_item = true
+          endif
+        -%}
+        {%- if is_item -%}
+          {%- assign idx = idx | plus: 1 -%}
+        {%- endif -%}
+        {%- if is_item and idx <= 20 -%}
+          {%- liquid
+            assign f = line | split: '|'
+            assign handle = f[0] | strip
+            assign style = f[1] | strip | default: 'f'
+            assign d = f[2] | split: ','
+            assign m = f[3] | split: ','
+            assign custom_img = f[4] | strip
+            assign product = all_products[handle]
+
+            assign dx = d[0] | strip | default: 50 | plus: 0
+            assign dy = d[1] | strip | default: 50 | plus: 0
+            assign dw = d[2] | strip | default: 12 | plus: 0
+            assign dr = d[3] | strip | default: 0 | plus: 0
+            assign dz = d[4] | strip | default: 1 | plus: 0
+            assign dop = d[5] | strip | default: 100 | plus: 0
+            assign ds = d[6] | strip | default: 0 | plus: 0
+            assign dv = d[7] | strip | default: 1 | plus: 0
+
+            assign mx = m[0] | strip | default: 50 | plus: 0
+            assign my = m[1] | strip | default: 50 | plus: 0
+            assign mw = m[2] | strip | default: 24 | plus: 0
+            assign mr = m[3] | strip | default: 0 | plus: 0
+            assign mz = m[4] | strip | default: 1 | plus: 0
+            assign mop = m[5] | strip | default: 100 | plus: 0
+            assign ms = m[6] | strip | default: 0 | plus: 0
+            assign mv = m[7] | strip | default: 1 | plus: 0
+          -%}
+          {%- comment -%}
+            Optional per-product sliders from the theme editor ("Adjust product" blocks). They are applied on
+            top of the layout values, so size 100% and move 0 mean no change. Saved by Shopify's own Save.
+          {%- endcomment -%}
+          {%- assign adjusted = false -%}
+          {%- for b in section.blocks -%}
+            {%- if b.type == 'adjust_product' and adjusted == false and b.settings.product.handle == handle -%}
+              {%- assign adjusted = true -%}
+              {%- assign dw = dw | times: b.settings.d_size | divided_by: 100.0 | at_least: 1 | at_most: 95 -%}
+              {%- assign dx = dx | plus: b.settings.d_x | at_least: 0 | at_most: 100 -%}
+              {%- assign dy = dy | plus: b.settings.d_y | at_least: 0 | at_most: 100 -%}
+              {%- assign dr = dr | plus: b.settings.d_rotate -%}
+              {%- assign mw = mw | times: b.settings.m_size | divided_by: 100.0 | at_least: 1 | at_most: 95 -%}
+              {%- assign mx = mx | plus: b.settings.m_x | at_least: 0 | at_most: 100 -%}
+              {%- assign my = my | plus: b.settings.m_y | at_least: 0 | at_most: 100 -%}
+              {%- assign mr = mr | plus: b.settings.m_rotate -%}
+              {%- if b.settings.hide_desktop -%}{%- assign dv = 0 -%}{%- endif -%}
+              {%- if b.settings.hide_mobile -%}{%- assign mv = 0 -%}{%- endif -%}
+            {%- endif -%}
+          {%- endfor -%}
+          {%- if product.title != blank -%}
+            {%- comment -%}
+              Optional auto-switch. Only when the owner added an enabled block for this product and picked
+              other products. Each extra product is one owner-chosen picker; blanks, repeats and deleted
+              products are skipped. The original is always first, and the cycle wraps back to it.
+            {%- endcomment -%}
+            {%- assign sw_count = 1 -%}
+            {%- assign sw_secs = 4 -%}
+            {%- assign sw_done = false -%}
+            {%- capture sw_slides -%}
+              {%- for b in section.blocks -%}
+                {%- if b.type == 'auto_switch' and b.settings.enabled and sw_done == false and b.settings.product.handle == handle -%}
+                  {%- assign sw_done = true -%}
+                  {%- assign sw_secs = b.settings.interval | default: 4 -%}
+                  {%- assign sw_seen = '|' | append: handle | append: '|' -%}
+                  {%- assign sw_keys = 'next_product,product_3,product_4,product_5,product_6' | split: ',' -%}
+                  {%- for key in sw_keys -%}
+                    {%- assign cand = b.settings[key] -%}
+                    {%- assign cand_token = '|' | append: cand.handle | append: '|' -%}
+                    {%- unless sw_seen contains cand_token -%}
+                      {%- if cand.handle != blank and cand.title != blank -%}
+                        {%- assign sw_seen = sw_seen | append: cand.handle | append: '|' -%}
+                        {%- assign sw_count = sw_count | plus: 1 -%}
+                        <span class="iz-sw__slide" data-href="{{ cand.url }}" aria-hidden="true">
+                          {{
+                            cand.featured_media
+                            | image_url: width: 1000
+                            | image_tag:
+                              class: 'iz-item__img',
+                              loading: 'lazy',
+                              widths: '300, 500, 800, 1000',
+                              sizes: '(max-width: 749px) 40vw, 14vw',
+                              alt: cand.title,
+                              draggable: 'false'
+                          }}
+                          <span class="iz-item__tag">
+                            <span class="iz-item__name">{{ cand.title | escape }}</span>
+                            <span class="iz-item__price">{{ cand.price | money }}</span>
+                          </span>
+                        </span>
+                      {%- endif -%}
+                    {%- endunless -%}
+                  {%- endfor -%}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endcapture -%}
+            <a
+              class="iz-item iz-item--{{ style | escape }}"
+              href="{{ product.url }}"
+              data-iz-item
+              data-id="{{ idx }}"
+              data-handle="{{ handle | escape }}"
+              {% if sw_count > 1 %}data-iz-switch="{{ sw_secs }}"{% endif %}
+              {% if adjusted %}data-adjusted{% endif %}
+              {% if dv == 0 %}data-hd{% endif %}
+              {% if mv == 0 %}data-hm{% endif %}
+              style="--i:{{ idx }};--dx:{{ dx }};--dy:{{ dy }};--dw:{{ dw }};--dr:{{ dr }};--dz:{{ dz }};--do:{{ dop }};--ds:{{ ds }};--mx:{{ mx }};--my:{{ my }};--mw:{{ mw }};--mr:{{ mr }};--mz:{{ mz }};--mo:{{ mop }};--ms:{{ ms }};"
+            >
+              {%- capture item_media -%}
+                {%- if custom_img != blank -%}
+                  <img
+                    class="iz-item__img"
+                    src="{{ custom_img | escape }}"
+                    alt="{{ product.title | escape }}"
+                    width="1000"
+                    height="1000"
+                    loading="lazy"
+                    decoding="async"
+                    draggable="false"
+                  >
+                {%- else -%}
+                  {{
+                    product.featured_media
+                    | image_url: width: 1000
+                    | image_tag:
+                      class: 'iz-item__img',
+                      loading: 'lazy',
+                      widths: '300, 500, 800, 1000',
+                      sizes: '(max-width: 749px) 40vw, 14vw',
+                      alt: product.title,
+                      draggable: 'false'
+                  }}
+                {%- endif -%}
+                <span class="iz-item__tag">
+                  <span class="iz-item__name">{{ product.title | escape }}</span>
+                  <span class="iz-item__price">{{ product.price | money }}</span>
+                </span>
+              {%- endcapture -%}
+
+              {%- if sw_count > 1 -%}
+                {%- comment -%}
+                  All products sit in one grid cell, so the box never changes size and nothing shifts when they change.
+                  Position, width, rotation, layer, opacity and shadow all come from the one placement.
+                {%- endcomment -%}
+                <span class="iz-sw__stack">
+                  <span class="iz-sw__slide is-current" data-href="{{ product.url }}">{{ item_media }}</span>
+                  {{ sw_slides }}
+                </span>
+              {%- else -%}
+                {{ item_media }}
+              {%- endif -%}
+            </a>
+          {%- endif -%}
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+
+    <div class="iz-fade" aria-hidden="true"></div>
+
+    {%- if section.settings.show_nav -%}
+      <nav class="iz-nav" aria-label="Primary">
+        <a class="iz-pill" href="{{ routes.all_products_collection_url }}">Shop</a>
+        <a class="iz-mark" href="{{ routes.root_url }}" aria-label="{{ shop.name | escape }} home">
+          <img src="{{ 'izaven-logo.png' | asset_url }}" alt="" width="1536" height="1024" decoding="async">
+        </a>
+        <span class="iz-nav__end">
+          <a class="iz-pill iz-pill--icon" href="{{ routes.search_url }}" aria-label="Search">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg>
+          </a>
+          <a class="iz-pill iz-pill--icon" href="{{ routes.cart_url }}" aria-label="Cart{% if cart.item_count > 0 %}, {{ cart.item_count }} items{% endif %}">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 016 0v2"/></svg>
+            {%- if cart.item_count > 0 -%}<span class="iz-count">{{ cart.item_count }}</span>{%- endif -%}
+          </a>
+        </span>
+      </nav>
+    {%- endif -%}
+
+    {%- if section.settings.heading != blank or section.settings.cta_label != blank -%}
+      <div class="iz-hero-copy">
+        {%- if section.settings.eyebrow != blank -%}
+          <p class="iz-eyebrow">{{ section.settings.eyebrow | escape }}</p>
+        {%- endif -%}
+        {%- if section.settings.heading != blank -%}
+          <h1 class="iz-heading">{{ section.settings.heading | escape }}</h1>
+        {%- endif -%}
+        {%- if section.settings.cta_label != blank -%}
+          <a class="iz-cta" href="{{ section.settings.cta_link | default: routes.all_products_collection_url }}">
+            <span>{{ section.settings.cta_label | escape }}</span>
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+          </a>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+
+  <template data-iz-layout>{{ section.settings.layout | escape }}</template>
+
+  {%- if section.settings.featured_count > 0 and fc.products_count > 0 -%}
+    <section
+      class="iz-feature"
+      aria-labelledby="iz-feature-{{ section.id }}"
+      style="--izc-d: {{ section.settings.featured_columns_desktop | default: 4 }}; --izc-m: {{ section.settings.featured_columns_mobile | default: 2 }}; --izc-ratio: {{ ratio_css }}; --izc-fit: {{ section.settings.featured_image_fit | default: 'cover' }}; --izc-size: {{ section.settings.featured_image_size | default: 100 }}%;"
+    >
+      <div class="iz-feature__head">
+        <h2 id="iz-feature-{{ section.id }}">{{ section.settings.featured_heading | escape }}</h2>
+        <a href="{{ fc.url }}">View all</a>
+      </div>
+      <ul class="iz-feature__grid">
+        {%- for product in fc.products limit: section.settings.featured_count -%}
+          {%- liquid
+            assign cs = 100
+            assign cx = 0
+            assign cy = 0
+            for raw_line in lines
+              assign cl = raw_line | strip
+              assign ctag = cl | slice: 0, 5
+              if ctag == '@card'
+                assign cf = cl | remove_first: '@card' | split: '|'
+                assign ch = cf[0] | strip
+                if ch == product.handle
+                  assign cp = cf[1] | split: ','
+                  assign cs = cp[0] | strip | default: 100 | plus: 0
+                  assign cx = cp[1] | strip | default: 0 | plus: 0
+                  assign cy = cp[2] | strip | default: 0 | plus: 0
+                endif
+              endif
+            endfor
+          -%}
+          <li>
+            <a class="iz-card" href="{{ product.url }}">
+              <span class="iz-card__media" style="--cs:{{ cs }};--cx:{{ cx }};--cy:{{ cy }};">
+                {%- if product.featured_media -%}
+                  {{
+                    product.featured_media
+                    | image_url: width: 800
+                    | image_tag:
+                      loading: 'lazy',
+                      widths: '300, 450, 600, 800',
+                      sizes: '(max-width: 749px) 46vw, 23vw',
+                      alt: product.title
+                  }}
+                {%- endif -%}
+              </span>
+              <span class="iz-card__name">{{ product.title | escape }}</span>
+              <span class="iz-card__price">
+                {%- if product.price_varies -%}From {% endif -%}{{ product.price | money }}
+              </span>
+            </a>
+          </li>
+        {%- endfor -%}
+      </ul>
+    </section>
+  {%- endif -%}
+</div>
+
+<script src="{{ 'izaven-showroom.js' | asset_url }}" defer></script>
+
+{% stylesheet %}
+  .iz {
+    --iz-black: #050506;
+    --iz-ink: #0c0c0e;
+    --iz-line: rgb(255 255 255 / 0.14);
+    --iz-silver: #c9ccd2;
+    --iz-text: #ececee;
+    --iz-muted: #8b8d94;
+    --iz-warm: #ffeed6;
+    --iz-ease: cubic-bezier(0.16, 1, 0.3, 1);
+    position: relative;
+    background: var(--iz-black);
+    color: var(--iz-text);
+    font-family: var(--font-body--family, system-ui, sans-serif);
+  }
+
+  /* Home only: the showroom brings its own navigation. */
+  body.template-index #header-group { display: none !important; }
+  body.template-index { background: #050506 !important; }
+  body.template-index .page-wrapper,
+  body.template-index #MainContent { padding-top: 0 !important; margin-top: 0 !important; }
+  .shopify-section:has(> .iz) { margin: 0; padding: 0; }
+
+  /* Stage: its box has the photograph's own aspect ratio, so every % maps to the same point on the picture at any width. */
+  .iz-stage {
+    --ar: var(--iz-ar-d);
+    --sc: var(--iz-sd);
+    position: relative;
+    width: 100%;
+    aspect-ratio: var(--ar);
+    overflow: hidden;
+    background: var(--iz-black);
+    isolation: isolate;
+  }
+  @media (max-width: 749px) { .iz-stage { --ar: var(--iz-ar-m); --sc: var(--iz-sm); } }
+  .iz-stage[data-force='mobile'] { --ar: var(--iz-ar-m); --sc: var(--iz-sm); }
+  .iz-stage[data-force='desktop'] { --ar: var(--iz-ar-d); --sc: var(--iz-sd); }
+
+  .iz-bg {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: fill;
+    display: block;
+    user-select: none;
+  }
+
+  /* Seamless handover into the footer: pure CSS, the photo is never reused below. */
+  .iz-fade {
+    position: absolute;
+    inset: auto 0 0;
+    height: 14%;
+    background: linear-gradient(to bottom, rgb(5 5 6 / 0), #050506 96%);
+    pointer-events: none;
+    z-index: 40;
+  }
+
+  .iz-layer { position: absolute; inset: 0; z-index: 10; }
+
+  /* Placements */
+  .iz-item {
+    --x: var(--dx); --y: var(--dy); --w: var(--dw); --r: var(--dr);
+    --z: var(--dz); --o: var(--do); --s: var(--ds);
+    position: absolute;
+    display: block;
+    left: calc(var(--x) * 1%);
+    top: calc(var(--y) * 1%);
+    width: calc(var(--w) * var(--sc, 1) * 1%);
+    z-index: var(--z);
+    opacity: calc(var(--o) / 100);
+    transform: translate(-50%, -50%) rotate(calc(var(--r) * 1deg));
+    filter: drop-shadow(0 calc(var(--s) * 0.25px) calc(var(--s) * 0.5px) rgb(0 0 0 / calc(var(--s) * 0.009)));
+    color: inherit;
+    text-decoration: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  @media (max-width: 749px) {
+    .iz-item { --x: var(--mx); --y: var(--my); --w: var(--mw); --r: var(--mr); --z: var(--mz); --o: var(--mo); --s: var(--ms); }
+  }
+  .iz-stage[data-force='mobile'] .iz-item { --x: var(--mx); --y: var(--my); --w: var(--mw); --r: var(--mr); --z: var(--mz); --o: var(--mo); --s: var(--ms); }
+  .iz-stage[data-force='desktop'] .iz-item { --x: var(--dx); --y: var(--dy); --w: var(--dw); --r: var(--dr); --z: var(--dz); --o: var(--do); --s: var(--ds); }
+
+  .iz-item[data-hd] { display: none; }
+  @media (max-width: 749px) {
+    .iz-item[data-hd] { display: block; }
+    .iz-item[data-hm] { display: none; }
+  }
+  .iz-stage[data-force='mobile'] .iz-item[data-hd] { display: block; }
+  .iz-stage[data-force='mobile'] .iz-item[data-hm] { display: none; }
+  .iz-stage[data-force='desktop'] .iz-item[data-hm] { display: block; }
+  .iz-stage[data-force='desktop'] .iz-item[data-hd] { display: none; }
+
+  .iz-item__img { display: block; width: 100%; height: auto; user-select: none; -webkit-user-drag: none; }
+  .iz-item--f .iz-item__img { outline: 1px solid rgb(255 255 255 / 0.2); outline-offset: -1px; }
+
+  .iz-item__tag {
+    position: absolute;
+    left: 50%;
+    top: 100%;
+    translate: -50% 10px;
+    display: grid;
+    gap: 2px;
+    justify-items: center;
+    padding: 7px 12px;
+    background: rgb(8 8 10 / 0.82);
+    border: 1px solid var(--iz-line);
+    backdrop-filter: blur(10px);
+    font-size: 11px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    white-space: nowrap;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.35s var(--iz-ease);
+  }
+  .iz-item__price { color: var(--iz-muted); }
+  .iz-item:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 5px; }
+
+  /* Auto-switch: both products share one grid cell, so the box is the same size throughout and nothing shifts. */
+  .iz-sw__stack { display: grid; }
+  .iz-sw__slide {
+    grid-area: 1 / 1;
+    place-self: center;
+    width: 100%;
+    opacity: 0;
+    scale: 0.96;
+    pointer-events: none;
+    transition: opacity 0.9s var(--iz-ease), scale 0.9s var(--iz-ease);
+  }
+  .iz-sw__slide.is-current { opacity: 1; scale: 1; pointer-events: auto; }
+  .iz-sw__slide:not(.is-current) .iz-item__tag { display: none; }
+  .iz-item:focus-visible .iz-item__tag { opacity: 1; }
+  @media (hover: hover) {
+    .iz-item { transition: scale 0.6s var(--iz-ease); }
+    .iz-item:hover { scale: 1.035; }
+    .iz-item:hover .iz-item__tag { opacity: 1; }
+  }
+
+  /* Entrance: only when JS has marked the stage, so no-JS visitors see everything. */
+  .iz-js .iz-item { translate: 0 18px; transition: opacity 0.9s var(--iz-ease), translate 0.9s var(--iz-ease), scale 0.6s var(--iz-ease); transition-delay: calc(var(--i) * 110ms), calc(var(--i) * 110ms), 0s; }
+  .iz-js .iz-stage:not(.is-in) .iz-item { opacity: 0; }
+  .iz-js .iz-stage.is-in .iz-item { translate: 0 0; }
+
+  /* Navigation overlay */
+  .iz-nav {
+    position: absolute;
+    inset: 0 0 auto;
+    z-index: 60;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    padding: max(18px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right)) 0 max(18px, env(safe-area-inset-left));
+    pointer-events: none;
+  }
+  .iz-nav > * { pointer-events: auto; }
+  .iz-nav__end { display: flex; justify-content: flex-end; gap: 10px; }
+  .iz-pill {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 44px;
+    min-width: 44px;
+    padding: 0 20px;
+    border: 1px solid var(--iz-line);
+    background: rgb(8 8 10 / 0.5);
+    backdrop-filter: blur(14px) saturate(1.2);
+    color: var(--iz-text);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    text-decoration: none;
+    justify-self: start;
+    transition: border-color 0.3s, background 0.3s;
+  }
+  .iz-pill--icon { padding: 0; justify-self: auto; }
+  .iz-pill:hover { border-color: rgb(255 238 214 / 0.6); background: rgb(20 18 16 / 0.65); }
+  .iz-pill:focus-visible, .iz-mark:focus-visible, .iz-cta:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 3px; }
+  .iz-count {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    min-width: 16px;
+    height: 16px;
+    padding: 0 4px;
+    display: grid;
+    place-items: center;
+    background: var(--iz-warm);
+    color: #111;
+    font-size: 10px;
+    font-weight: 700;
+  }
+  .iz-mark { display: block; height: 34px; justify-self: center; }
+  .iz-mark img { height: 100%; width: auto; display: block; filter: invert(1) brightness(0.96); }
+
+  /* Hero copy sits on the empty floor, never over the logo wall. */
+  .iz-hero-copy {
+    position: absolute;
+    left: 50%;
+    bottom: 5%;
+    z-index: 50;
+    translate: -50% 0;
+    width: min(92%, 760px);
+    display: grid;
+    justify-items: center;
+    gap: 14px;
+    text-align: center;
+  }
+  .iz-eyebrow { margin: 0; font-size: 11px; letter-spacing: 0.34em; text-transform: uppercase; color: var(--iz-silver); }
+  .iz-heading { margin: 0; font-family: var(--font-heading--family, inherit); font-size: clamp(22px, 3vw, 44px); font-weight: 600; letter-spacing: 0.06em; line-height: 1.1; text-transform: uppercase; text-wrap: balance; }
+  .iz-cta {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    min-height: 48px;
+    padding: 0 30px;
+    border: 1px solid rgb(255 238 214 / 0.55);
+    background: rgb(8 8 10 / 0.55);
+    backdrop-filter: blur(12px);
+    color: var(--iz-text);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.26em;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.3s, border-color 0.3s;
+  }
+  .iz-cta:hover { background: rgb(255 238 214 / 0.12); border-color: var(--iz-warm); }
+  .iz-cta svg { transition: translate 0.3s var(--iz-ease); }
+  .iz-cta:hover svg { translate: 4px 0; }
+
+  /* Featured strip */
+  .iz-feature { max-width: 1400px; margin: 0 auto; padding: clamp(40px, 6vw, 88px) max(16px, env(safe-area-inset-left)) clamp(48px, 7vw, 96px); }
+  .iz-feature__head { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-bottom: 18px; margin-bottom: 26px; border-bottom: 1px solid var(--iz-line); }
+  .iz-feature__head h2 { margin: 0; font-size: 12px; font-weight: 600; letter-spacing: 0.3em; text-transform: uppercase; color: var(--iz-silver); }
+  .iz-feature__head a { color: var(--iz-muted); font-size: 11px; letter-spacing: 0.2em; text-transform: uppercase; text-decoration: none; }
+  .iz-feature__head a:hover { color: var(--iz-warm); }
+  .iz-feature__grid { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(var(--izc-d, 4), minmax(0, 1fr)); gap: clamp(12px, 2vw, 28px); }
+  @media (max-width: 989px) { .iz-feature__grid { grid-template-columns: repeat(min(var(--izc-d, 4), 3), minmax(0, 1fr)); } }
+  @media (max-width: 749px) { .iz-feature__grid { grid-template-columns: repeat(var(--izc-m, 2), minmax(0, 1fr)); } }
+  .iz-card { display: grid; gap: 6px; color: inherit; text-decoration: none; }
+  .iz-card__media { display: grid; place-items: center; aspect-ratio: var(--izc-ratio, 4 / 5); overflow: hidden; background: var(--iz-ink); border: 1px solid var(--iz-line); }
+  .iz-card__media img { width: var(--izc-size, 100%); height: var(--izc-size, 100%); object-fit: var(--izc-fit, cover); display: block; transform: translate(calc(var(--cx, 0) * 1%), calc(var(--cy, 0) * 1%)) scale(calc(var(--cs, 100) / 100)); transition: scale 0.8s var(--iz-ease); }
+  .iz-card:hover .iz-card__media img { scale: 1.04; }
+  /* Editor previews of the strip at a chosen width (viewport media queries cannot see the preview frame). */
+  .iz-feature[data-force='mobile'] .iz-feature__grid { grid-template-columns: repeat(var(--izc-m, 2), minmax(0, 1fr)); }
+  .iz-feature[data-force='tablet'] .iz-feature__grid { grid-template-columns: repeat(min(var(--izc-d, 4), 3), minmax(0, 1fr)); }
+  .iz-feature[data-force='desktop'] .iz-feature__grid { grid-template-columns: repeat(var(--izc-d, 4), minmax(0, 1fr)); }
+  .iz-card:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 4px; }
+  .iz-card__name { margin-top: 8px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
+  .iz-card__price { color: var(--iz-muted); font-size: 12px; letter-spacing: 0.06em; }
+
+  @media (max-width: 749px) {
+    .iz-nav { padding-top: max(12px, env(safe-area-inset-top)); }
+    .iz-pill { padding: 0 14px; letter-spacing: 0.18em; }
+    .iz-mark { height: 28px; }
+    .iz-hero-copy { bottom: 3.5%; }
+  }
+
+  /* Reduced motion: switch transitions off outright. A tiny non-zero duration still animates every property. */
+  @media (prefers-reduced-motion: reduce) {
+    .iz-item, .iz-item__tag, .iz-pill, .iz-cta, .iz-cta svg, .iz-card__media img, .iz-sw__slide { transition: none !important; animation: none !important; }
+    .iz-js .iz-item { translate: none; }
+    .iz-item:hover { scale: none; }
+  }
+{% endstylesheet %}
+
+{% schema %}
+{
+  "name": "Studio showroom",
+  "class": "section-wrapper",
+  "settings": [
+    { "type": "header", "content": "Studio photographs" },
+    { "type": "image_picker", "id": "desktop_image", "label": "Desktop studio image", "info": "Leave empty to use the bundled IZAVEN studio (1672 × 941). Use the same aspect ratio as your artwork; the stage always matches it." },
+    { "type": "image_picker", "id": "mobile_image", "label": "Mobile studio image", "info": "Leave empty to use the bundled tall mobile studio (773 × 2000)." },
+    { "type": "text", "id": "background_alt", "label": "Image description", "default": "IZAVEN showroom: black marble studio with a chrome logo wall, clothing racks and a central podium" },
+
+    { "type": "header", "content": "Hero text" },
+    { "type": "text", "id": "eyebrow", "label": "Small line above" },
+    { "type": "text", "id": "heading", "label": "Heading", "info": "Leave empty to let the studio speak." },
+    { "type": "text", "id": "cta_label", "label": "Button label", "default": "Shop the collection" },
+    { "type": "url", "id": "cta_link", "label": "Button link", "info": "Defaults to all products." },
+    { "type": "checkbox", "id": "show_nav", "label": "Show navigation over the studio", "default": true },
+
+    { "type": "header", "content": "Product placements" },
+    { "type": "paragraph", "content": "Edit these visually: open your home page with ?izaven-editor=1 added to the address (for an unpublished theme use the Preview link first, then add &izaven-editor=1). Drag products into place, and switch to Latest cards to scale and move each card's picture. Press Copy layout, then paste it into the box below and save. Up to 20 placements." },
+    { "type": "range", "id": "placement_scale_desktop", "label": "Scale all placements: desktop", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100, "info": "Multiplies the width of every placement on desktop. Use the visual editor to size a single product." },
+    { "type": "range", "id": "placement_scale_mobile", "label": "Scale all placements: mobile", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100 },
+    { "type": "text", "id": "apply_repo", "label": "GitHub repository for one-click apply (optional)", "info": "Leave empty unless you have set up the apply workflow described in docs/izaven-showroom.md. Format: owner/repository." },
+    { "type": "textarea", "id": "layout", "label": "Placement layout", "default": "# handle | style | desktop x,y,w,r,z,o,s,v | mobile x,y,w,r,z,o,s,v\nmens-premium-polo | f | 50,64,10,0,3,100,45,1 | 50,47,26,0,3,100,45,1" },
+
+    { "type": "header", "content": "Featured products" },
+    { "type": "text", "id": "featured_heading", "label": "Heading", "default": "Latest" },
+    { "type": "collection", "id": "featured_collection", "label": "Collection", "info": "Empty shows all products." },
+    { "type": "range", "id": "featured_count", "label": "Products to show", "min": 0, "max": 12, "step": 1, "default": 8, "info": "0 hides the strip." },
+    { "type": "range", "id": "featured_columns_desktop", "label": "Columns: desktop", "min": 2, "max": 6, "step": 1, "default": 4, "info": "Fewer columns means larger product images." },
+    { "type": "range", "id": "featured_columns_mobile", "label": "Columns: mobile", "min": 1, "max": 3, "step": 1, "default": 2 },
+    { "type": "select", "id": "featured_image_ratio", "label": "Image shape", "default": "portrait", "options": [
+      { "value": "portrait", "label": "Portrait (4:5)" },
+      { "value": "square", "label": "Square" },
+      { "value": "landscape", "label": "Landscape (4:3)" },
+      { "value": "original", "label": "Original proportions" }
+    ] },
+    { "type": "select", "id": "featured_image_fit", "label": "Image fit", "default": "cover", "options": [
+      { "value": "cover", "label": "Fill the frame (may crop)" },
+      { "value": "contain", "label": "Show the whole image" }
+    ] },
+    { "type": "range", "id": "featured_image_size", "label": "Image size inside the frame", "min": 40, "max": 100, "step": 5, "unit": "%", "default": 100, "info": "Below 100% leaves a dark margin around the picture." }
+  ],
+  "blocks": [
+    {
+      "type": "adjust_product",
+      "name": "Product size/position",
+      "limit": 20,
+      "settings": [
+        { "type": "paragraph", "content": "Resize, move or rotate one product on the studio with sliders. Shopify's Save applies it to your store, with nothing to paste. It is applied on top of the Placement layout, so 100% and 0 mean no change. Add one block per product." },
+        { "type": "product", "id": "product", "label": "Product on the studio", "info": "Must already be placed in the Placement layout." },
+        { "type": "header", "content": "Desktop" },
+        { "type": "range", "id": "d_size", "label": "Size", "min": 30, "max": 250, "step": 5, "unit": "%", "default": 100 },
+        { "type": "range", "id": "d_x", "label": "Move left / right", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0, "info": "Percent of the studio width. Negative moves left." },
+        { "type": "range", "id": "d_y", "label": "Move up / down", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0, "info": "Percent of the studio height. Negative moves up." },
+        { "type": "range", "id": "d_rotate", "label": "Rotate", "min": -45, "max": 45, "step": 1, "unit": "°", "default": 0 },
+        { "type": "checkbox", "id": "hide_desktop", "label": "Hide on desktop", "default": false },
+        { "type": "header", "content": "Mobile" },
+        { "type": "range", "id": "m_size", "label": "Size", "min": 30, "max": 250, "step": 5, "unit": "%", "default": 100 },
+        { "type": "range", "id": "m_x", "label": "Move left / right", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0 },
+        { "type": "range", "id": "m_y", "label": "Move up / down", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0 },
+        { "type": "range", "id": "m_rotate", "label": "Rotate", "min": -45, "max": 45, "step": 1, "unit": "°", "default": 0 },
+        { "type": "checkbox", "id": "hide_mobile", "label": "Hide on mobile", "default": false }
+      ]
+    },
+    {
+      "type": "auto_switch",
+      "name": "Auto-switch product",
+      "limit": 20,
+      "settings": [
+        { "type": "paragraph", "content": "Makes one product on the studio change into the products you choose, in the same spot at the same size. It goes through them in order, then back to the first, and repeats. Add one block per product." },
+        { "type": "product", "id": "product", "label": "Product on the studio", "info": "Must already be placed in the Placement layout. If it is placed more than once, each placement switches." },
+        { "type": "checkbox", "id": "enabled", "label": "Enable automatic switching", "default": true },
+        { "type": "product", "id": "next_product", "label": "Product 2 (next)", "info": "You choose every product. Nothing is picked for you." },
+        { "type": "product", "id": "product_3", "label": "Product 3 (optional)" },
+        { "type": "product", "id": "product_4", "label": "Product 4 (optional)" },
+        { "type": "product", "id": "product_5", "label": "Product 5 (optional)" },
+        { "type": "product", "id": "product_6", "label": "Product 6 (optional)", "info": "Leave a slot empty to skip it. A product picked twice appears once." },
+        { "type": "range", "id": "interval", "label": "Switching interval", "min": 2, "max": 30, "step": 1, "unit": "s", "default": 4 }
+      ]
+    }
+  ],
+  "presets": [
+    { "name": "Studio showroom" }
+  ]
+}
+{% endschema %}

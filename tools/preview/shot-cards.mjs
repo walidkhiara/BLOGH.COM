@@ -1,0 +1,15 @@
+import { chromium } from 'playwright-core';
+import { serve } from './harness.mjs';
+const { server, port } = await serve();
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, reducedMotion: 'reduce' });
+const p = await ctx.newPage();
+await p.goto(`http://localhost:${port}/?izaven-editor=1`, { waitUntil: 'networkidle' });
+await p.waitForSelector('.ized [data-list]');
+await p.click('[data-view=cards]');
+await p.click('.iz-feature li:nth-child(2) .iz-card__media');
+await p.fill('[data-card-inspector] input[type=number][data-cf=s]', '130');
+await p.fill('[data-card-inspector] input[type=number][data-cf=x]', '12');
+await p.waitForTimeout(300);
+await p.screenshot({ path: 'out/editor-cards.png' });
+await b.close(); server.close();

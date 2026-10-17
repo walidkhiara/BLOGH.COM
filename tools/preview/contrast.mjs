@@ -1,0 +1,38 @@
+import { chromium } from 'playwright-core';
+import { serve } from './harness.mjs';
+const { server, port } = await serve();
+const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome', args: ['--no-sandbox'] });
+const audit = (scope) => `(() => {
+  const parse = (c) => { const m = c.match(/[\\d.]+/g).map(Number); return { r: m[0], g: m[1], b: m[2], a: m[3] === undefined ? 1 : m[3] }; };
+  const lin = (v) => { v /= 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); };
+  const L = (c) => 0.2126 * lin(c.r) + 0.7152 * lin(c.g) + 0.0722 * lin(c.b);
+  const over = (top, bot) => ({ r: top.r * top.a + bot.r * (1 - top.a), g: top.g * top.a + bot.g * (1 - top.a), b: top.b * top.a + bot.b * (1 - top.a), a: 1 });
+  const bgOf = (el) => { const stack = []; for (let n = el; n; n = n.parentElement) { const c = parse(getComputedStyle(n).backgroundColor); if (c.a > 0) stack.push(c); if (c.a === 1) break; } let base = { r: 5, g: 5, b: 6, a: 1 }; for (let i = stack.length - 1; i >= 0; i--) base = over(stack[i], base); return base; };
+  const out = []; const seen = new Set();
+  document.querySelectorAll('${scope} *').forEach((el) => {
+    const own = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim());
+    if (!own && !['INPUT', 'SELECT', 'TEXTAREA'].includes(el.tagName)) return;
+    const r = el.getBoundingClientRect(); if (!r.width || !r.height) return;
+    const s = getComputedStyle(el); if (s.visibility === 'hidden' || s.opacity === '0') return;
+    const fg = over(parse(s.color), bgOf(el)); const bg = bgOf(el);
+    const [x, y] = [L(fg), L(bg)].sort((m, n) => n - m); const ratio = (x + 0.05) / (y + 0.05);
+    const size = parseFloat(s.fontSize); const large = size >= 24 || (size >= 18.66 && +s.fontWeight >= 700);
+    const need = large ? 3 : 4.5;
+    const txt = (el.value || el.textContent || '').trim().slice(0, 28);
+    const key = txt + '|' + s.color + '|' + s.backgroundColor; if (seen.has(key)) return; seen.add(key);
+    if (ratio < need) out.push({ txt, ratio: +ratio.toFixed(2), need, fg: s.color });
+  });
+  return out;
+})()`;
+const p = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await p.goto(`http://localhost:${port}/?izaven-editor=1`, { waitUntil: 'networkidle' }); await p.waitForSelector('.ized [data-list]');
+await p.click('.ized-list li[data-id="1"]');
+console.log('EDITOR (studio view):', JSON.stringify(await p.evaluate(audit('.ized')), null, 0));
+await p.click('[data-view=cards]'); await p.click('.iz-feature li:nth-child(1) .iz-card__media');
+console.log('EDITOR (cards view) :', JSON.stringify(await p.evaluate(audit('.ized')), null, 0));
+const q = await b.newPage({ viewport: { width: 1440, height: 900 } });
+await q.goto(`http://localhost:${port}/`, { waitUntil: 'networkidle' });
+await q.evaluate(() => window.scrollTo(0, document.body.scrollHeight)); await q.waitForTimeout(300);
+console.log('FOOTER              :', JSON.stringify(await q.evaluate(audit('.izf')), null, 0));
+console.log('LATEST STRIP        :', JSON.stringify(await q.evaluate(audit('.iz-feature')), null, 0));
+await b.close(); server.close();
