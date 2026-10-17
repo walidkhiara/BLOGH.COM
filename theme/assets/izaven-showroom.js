@@ -55,8 +55,8 @@
   }
 
   /**
-   * Auto-switch: a placement with data-iz-switch holds two products in one grid cell and
-   * crossfades between them every N seconds (CSS does the animation; this only flips a class).
+   * Auto-switch: a placement with data-iz-switch holds the owner's products in one grid cell and
+   * crossfades through them in order, then back to the first, every N seconds (CSS does the animation; this only flips a class).
    * It stays still for visitors who prefer reduced motion, while the tab is hidden, while the
    * studio is off screen, and while the visitor hovers or focuses the product.
    */
@@ -77,7 +77,7 @@
       function flip() {
         timer = null;
         if (!document.body.contains(item)) return;
-        var next = 1 - current;
+        var next = (current + 1) % slides.length; // wraps from the last product back to the first
         slides[current].classList.remove('is-current');
         slides[current].setAttribute('aria-hidden', 'true');
         slides[next].classList.add('is-current');

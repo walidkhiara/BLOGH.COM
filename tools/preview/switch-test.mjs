@@ -53,6 +53,30 @@ const same = (a, c) => a.cx === c.cx && a.cy === c.cy && Math.abs(a.w - c.w) < 0
   ok('their positions never moved', same(before.shoes, await rect(page, SHOES)) && same(before.zip, await rect(page, ZIP)));
   await ctx.close(); }
 
+// ---- 2b. more than two products: an ordered cycle that wraps back to the first
+{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url([{ p: POLO, n: [SHOES, ZIP, PANTS], i: 3 }]), { waitUntil: 'networkidle' });
+  ok('4 products in one placement', (await page.locator('[data-iz-item][data-handle="' + POLO + '"] .iz-sw__slide').count()) === 4);
+  const r0 = await rect(page, POLO);
+  const order = [];
+  for (let i = 0; i < 9; i++) { await page.clock.runFor(i === 0 ? 3100 : 3000); order.push((await shown(page, POLO)).cur); }
+  const want = [SHOES, ZIP, PANTS, POLO, SHOES, ZIP, PANTS, POLO, SHOES];
+  ok('cycles in the owner\'s order and wraps back to the first (x2 laps)', JSON.stringify(order) === JSON.stringify(want), order.map((x) => x.slice(0, 8)).join(' > '));
+  ok('the link and name follow every step', (await shown(page, POLO)).href === SHOES && (await shown(page, POLO)).name.includes('lace-up'));
+  ok('same position and size after 9 changes', same(r0, await rect(page, POLO)));
+  ok('exactly one product is visible at any time', await page.evaluate(() => document.querySelectorAll('[data-iz-item][data-handle] .iz-sw__slide.is-current').length === 1)); await ctx.close(); }
+for (const [label, list, expectCount, expectOrder] of [
+  ['an empty slot in the middle is skipped', [SHOES, '', PANTS], 3, [SHOES, PANTS, POLO]],
+  ['a product picked twice appears once', [SHOES, SHOES, ZIP], 3, [SHOES, ZIP, POLO]],
+  ['the placed product repeated in the list is ignored', [POLO, SHOES], 2, [SHOES, POLO]],
+  ['a deleted product in the middle is skipped', [SHOES, 'deleted-product', ZIP], 3, [SHOES, ZIP, POLO]]]) {
+  const { ctx, page } = await mk(); await freeze(page); await page.goto(url([{ p: POLO, n: list, i: 2 }]), { waitUntil: 'networkidle' });
+  const n = await page.locator('[data-iz-item][data-handle="' + POLO + '"] .iz-sw__slide').count();
+  const got = []; for (let i = 0; i < expectOrder.length; i++) { await page.clock.runFor(i === 0 ? 2100 : 2000); got.push((await shown(page, POLO)).cur); }
+  ok(label, n === expectCount && JSON.stringify(got) === JSON.stringify(expectOrder), `${n} slides: ${got.map((x) => x.slice(0, 8)).join(' > ')}`); await ctx.close(); }
+{ const schema = JSON.parse((await import('node:fs')).readFileSync('../../theme/sections/izaven-showroom.liquid', 'utf8').match(/\{% schema %\}([\s\S]*?)\{% endschema %\}/)[1]);
+  const ids = schema.blocks.find((x) => x.type === 'auto_switch').settings.map((x) => x.id);
+  ok('the block offers 6 product pickers (placed + 5 more)', ['product', 'next_product', 'product_3', 'product_4', 'product_5', 'product_6'].every((k) => ids.includes(k)), ids.join(',')); }
+
 // ---- 3. configuration edge cases
 for (const [label, cfg, expectSwitch] of [
   ['disabled block does nothing', [{ p: POLO, n: SHOES, i: 4, e: false }], 0],

@@ -184,6 +184,7 @@
     var exitArmed = false;
     var autosaveTimer = null;
     var restoredNote = false;
+    var applyRepo = (root.getAttribute('data-apply-repo') || '').trim();
 
     var liveText = template ? (template.content ? template.content.textContent : template.textContent) : '';
     var catalog = {};
@@ -260,11 +261,13 @@
           '<section data-card-inspector></section></div>' +
         '<section><details><summary>Layout text (advanced)</summary>' +
           '<textarea data-ctl="text" spellcheck="false" aria-label="Layout text"></textarea>' +
-          '<div class="ized-two"><button type="button" class="ized-btn" data-act="apply-text">Apply text</button><button type="button" class="ized-btn" data-act="download">Download .txt</button></div></details></section>' +
+          '<div class="ized-two"><button type="button" class="ized-btn" data-act="apply-text">Load this text</button><button type="button" class="ized-btn" data-act="download">Download .txt</button></div>' +
+          '<div class="ized-two"><button type="button" class="ized-btn" data-act="copy-claude">Copy message for Claude</button><button type="button" class="ized-btn" data-act="send-github"' + (applyRepo ? '' : ' hidden') + '>Send to store via GitHub</button></div></details></section>' +
       '</div>' +
       '<footer class="ized-foot">' +
         '<div class="line"><button type="button" class="ized-btn" data-act="undo" title="Undo (Ctrl/Cmd+Z)">Undo</button><button type="button" class="ized-btn" data-act="redo" title="Redo (Ctrl/Cmd+Shift+Z)">Redo</button><button type="button" class="ized-btn ized-btn--danger" data-act="cancel" title="Discard changes since your last save">Cancel</button></div>' +
-        '<div class="line" style="grid-template-columns:1fr 1fr"><button type="button" class="ized-btn" data-act="save">Save draft</button><button type="button" class="ized-btn ized-btn--primary" data-act="copy">Copy layout</button></div>' +
+        '<div class="line" style="grid-template-columns:1fr 1.4fr"><button type="button" class="ized-btn" data-act="save" title="Your changes already save automatically in this browser">Keep draft</button><button type="button" class="ized-btn ized-btn--primary" data-act="copy" title="Copies the layout and shows how to put it on your store">Apply to store</button></div>' +
+        '<p class="ized-help" style="margin:0">Changes save in this browser automatically. <b>Apply to store</b> is what puts them on your store.</p>' +
         '<div class="ized-status" role="status" aria-live="polite" data-status></div>' +
       '</footer>';
     document.body.appendChild(panel);
@@ -655,7 +658,7 @@
         var shop = (window.Shopify && window.Shopify.shop) || shopName;
         var tid = window.Shopify && window.Shopify.theme && window.Shopify.theme.id;
         var link = 'https://' + shop + '/admin/themes' + (tid ? '/' + tid + '/editor' : '');
-        say('<b>Layout copied.</b> <a href="' + esc(link) + '" target="_blank" rel="noopener" style="color:#ffeed6">Open the theme editor</a> → Home → Studio showroom → Placement layout → paste → Save.');
+        say('<b>Layout copied. Two more steps put it on your store:</b><br>1. <a href="' + esc(link) + '" target="_blank" rel="noopener" style="color:#ffeed6">Open the theme editor</a>, then Home → Studio showroom → Placement layout.<br>2. Select all, paste, and press <b>Save</b> at the top right of the theme editor.');
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); });
@@ -892,6 +895,21 @@
         case 'save': save(); break;
         case 'copy': copyLayout(); break;
         case 'remove': removeSel(); break;
+        case 'copy-claude': {
+          var msg = 'Apply this placement layout to my IZAVEN SHOWROOM theme (Studio showroom > Placement layout):\n```\n' + ser() + '\n```';
+          var fin = function () { lastCopied = ser(); say('<b>Message copied.</b> Paste it into your chat with Claude and ask it to apply it. That also puts it on the draft theme.'); };
+          if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(msg).then(fin, function () { fallbackCopy(msg); }); else fallbackCopy(msg);
+          break;
+        }
+        case 'send-github': {
+          var body = 'Layout from the placement editor. Do not edit.\n\n```\n' + ser() + '\n```\n';
+          var gh = 'https://github.com/' + applyRepo + '/issues/new?title=' + encodeURIComponent('izaven-layout') + '&body=' + encodeURIComponent(body);
+          if (gh.length > 7500) { say('<b>This layout is too long to send this way.</b> Use Apply to store instead.'); break; }
+          lastCopied = ser();
+          window.open(gh, '_blank', 'noopener');
+          say('<b>GitHub opened.</b> Press <b>Submit new issue</b> there. Your store updates within about a minute, and a comment on that issue tells you the result.');
+          break;
+        }
         case 'card-reset':
           if (selCard) { pushHistory(); delete cards[selCard]; syncCards(); renderCardInspector(); renderCardList(); dirtyState(); }
           break;

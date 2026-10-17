@@ -81,7 +81,13 @@ export async function buildPage(opts = {}) {
 
   const defaultLayout = fs.readFileSync(path.join(here, 'layout.default.txt'), 'utf8');
   const layout = opts.layout !== undefined ? opts.layout : defaultLayout;
-  const blocks = (opts.switches || []).map((s) => ({ type: 'auto_switch', settings: { enabled: s.e !== false, product: product(s.p), next_product: product(s.n), interval: s.i } }));
+  const blocks = (opts.switches || []).map((s) => {
+    const list = Array.isArray(s.n) ? s.n : [s.n];
+    const keys = ['next_product', 'product_3', 'product_4', 'product_5', 'product_6'];
+    const settings = { enabled: s.e !== false, product: product(s.p), interval: s.i };
+    keys.forEach((k, i) => { settings[k] = list[i] ? product(list[i]) : undefined; });
+    return { type: 'auto_switch', settings };
+  });
   const show = await section('izaven-showroom.liquid', { layout, ...(opts.showroom || {}) }, blocks);
   const foot = await section('izaven-footer.liquid', opts.footer || {});
 
@@ -110,6 +116,7 @@ export function serve(port = 0, defaults_ = {}) {
         const o = { ...defaults_ };
         if (u.searchParams.get('layout')) o.layout = Buffer.from(u.searchParams.get('layout'), 'base64').toString('utf8');
         if (u.searchParams.get('sw')) o.switches = JSON.parse(Buffer.from(u.searchParams.get('sw'), 'base64').toString('utf8'));
+        if (u.searchParams.get('repo')) o.showroom = { ...(o.showroom || {}), apply_repo: u.searchParams.get('repo') };
         if (sc === 'empty') o.layout = '';
         if (sc === 'missing') o.layout = '# test\nthis-product-was-deleted | f | 50,50,12,0,1,100,0,1 | 50,50,24,0,1,100,0,1\nmens-premium-polo | f | 50,60,12,0,2,100,0,1 | 50,40,26,0,2,100,0,1';
         if (sc === 'crlf') o.layout = fs.readFileSync(path.join(here, 'layout.default.txt'), 'utf8').replace(/\n/g, '\r\n');

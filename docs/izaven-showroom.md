@@ -25,6 +25,24 @@ Files live in `theme/` and mirror a Shopify theme (Horizon). Nothing here touche
 
 Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer, Delete removes, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
 
+## Putting your changes on the store
+
+A page on your storefront cannot write to Shopify (that needs a private admin key, which must never sit in a public page). There are three ways to get the editor's layout onto the store:
+
+1. **Apply to store** (no setup). It copies the layout, links to the theme editor and lists the two remaining steps: paste into **Home → Studio showroom → Placement layout**, then press **Save** in the theme editor.
+2. **Ask Claude** (no setup). Under **Layout text (advanced)** press **Copy message for Claude**, paste it into the chat, and Claude applies it to the draft theme.
+3. **One click via GitHub** (one-time setup, below). The editor opens a pre-filled GitHub issue; pressing **Submit new issue** applies the layout to your theme within about a minute.
+
+### One-time setup for option 3
+
+1. **Shopify admin → Settings → Apps and sales channels → Develop apps → Create an app.** Under **Configure Admin API scopes** tick `read_themes` and `write_themes`, install the app, and **reveal the Admin API access token once** (copy it).
+2. **GitHub repository → Settings → Secrets and variables → Actions.** Add a **secret** `SHOPIFY_ADMIN_TOKEN` (the token) and two **variables**: `SHOPIFY_STORE` = your `…myshopify.com` domain, and `SHOPIFY_THEME_ID` = the numeric id of the theme to update (leave it empty to update the published theme).
+3. **Merge this branch into the repository's default branch.** GitHub only runs issue workflows from the default branch.
+4. In the theme editor, **Home → Studio showroom → GitHub repository for one-click apply**: enter `owner/repository`. Until this is filled in, the GitHub button stays hidden.
+5. In the editor open **Layout text (advanced) → Send to store via GitHub**, then press **Submit new issue**. A comment on the issue reports the result.
+
+Safety: the workflow acts only on issues opened by the repository owner whose title is `izaven-layout`. It refuses anything that is not a well-formed layout (unknown fields, numbers out of range, images from outside `cdn.shopify.com`, more than 20 placements). It changes only the layout setting of the showroom section and leaves every other setting and block alone, then reads the file back to confirm. `tools/apply-layout/test.mjs` tests this against a mock Shopify.
+
 ## Auto-switching a product
 
 Make a product on the studio swap to another one you choose, in exactly the same spot.
@@ -32,10 +50,11 @@ Make a product on the studio swap to another one you choose, in exactly the same
 1. In the theme editor open **Home → Studio showroom** and click **Add block → Auto-switch product**.
 2. **Product on the studio:** pick a product that is already placed in the Placement layout.
 3. **Enable automatic switching:** on or off, per product.
-4. **Next product:** you pick it. Nothing is ever chosen for you.
-5. **Switching interval:** 2–30 seconds, default 4.
+4. **Product 2 (next):** you pick it. Nothing is ever chosen for you.
+5. **Products 3 to 6 (optional):** add more products if you want a longer cycle. Empty slots are skipped and a product picked twice appears once.
+6. **Switching interval:** 2–30 seconds, default 4.
 
-The two products **alternate** (A, then B, then A again) with a 0.9 second fade and a slight scale, using the original placement's position, width, rotation, layer, opacity and shadow, on desktop and on mobile. The next product uses its own store photo and its own title, price and link. Add one block per product; any number of products can switch, each on its own timer, and products without a block never change. A block is ignored if it is switched off, if the next product is the same one or has been deleted, or if the product is not placed.
+The products **cycle in the order you set** (the placed product, then Product 2, 3, and so on, then back to the first and repeating) with a 0.9 second fade and a slight scale, using the original placement's position, width, rotation, layer, opacity and shadow, on desktop and on mobile. The next product uses its own store photo and its own title, price and link. Add one block per product; any number of products can switch, each on its own timer, and products without a block never change. A block is ignored if it is switched off, if the next product is the same one or has been deleted, or if the product is not placed.
 
 It pauses while the tab is hidden, while the studio is off screen, and while a visitor hovers or focuses that product. For visitors who prefer reduced motion it does not switch automatically. The placement editor always shows the original product so you can position it, and marks those placements "auto-switches".
 

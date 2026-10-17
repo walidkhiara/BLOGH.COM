@@ -1,0 +1,40 @@
+name: Apply placement layout to the store
+
+# The placement editor opens a pre-filled issue titled "izaven-layout". Opening it runs this
+# workflow, which validates the layout and writes it into the theme's Studio showroom setting.
+# Only issues opened by the repository owner are acted on.
+on:
+  issues:
+    types: [opened]
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  apply:
+    if: github.event.issue.user.login == github.repository_owner && startsWith(github.event.issue.title, 'izaven-layout')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Apply layout
+        id: apply
+        continue-on-error: true
+        env:
+          SHOPIFY_STORE: ${{ vars.SHOPIFY_STORE }}
+          SHOPIFY_THEME_ID: ${{ vars.SHOPIFY_THEME_ID }}
+          SHOPIFY_ADMIN_TOKEN: ${{ secrets.SHOPIFY_ADMIN_TOKEN }}
+          ISSUE_BODY: ${{ github.event.issue.body }}
+        run: node tools/apply-layout/apply-layout.mjs | tee result.txt
+      - name: Report back and close
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NUMBER: ${{ github.event.issue.number }}
+        run: |
+          if [ ! -s result.txt ]; then echo "Not applied: the workflow failed before producing a result. Open the Actions tab for details." > result.txt; fi
+          gh issue comment "$NUMBER" --body-file result.txt
+          gh issue close "$NUMBER"

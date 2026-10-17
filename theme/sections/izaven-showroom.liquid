@@ -65,6 +65,7 @@
   data-section-id="{{ section.id }}"
   data-editor-src="{{ 'izaven-editor.js' | asset_url }}"
   data-shop-handle="{{ shop.permanent_domain }}"
+  data-apply-repo="{{ section.settings.apply_repo | escape }}"
 >
   <div
     class="iz-stage"
@@ -124,30 +125,60 @@
             assign mop = m[5] | strip | default: 100 | plus: 0
             assign ms = m[6] | strip | default: 0 | plus: 0
             assign mv = m[7] | strip | default: 1 | plus: 0
-
-            # Optional auto-switch: only when the owner added an enabled block for this product and picked the next product.
-            assign sw = nil
-            assign sw_secs = 4
-            for b in section.blocks
-              if b.type == 'auto_switch' and b.settings.enabled
-                assign bp = b.settings.product
-                assign bn = b.settings.next_product
-                if bp.handle == handle and bn.handle != blank and bn.handle != handle
-                  assign sw = bn
-                  assign sw_secs = b.settings.interval | default: 4
-                  break
-                endif
-              endif
-            endfor
           -%}
           {%- if product.title != blank -%}
+            {%- comment -%}
+              Optional auto-switch. Only when the owner added an enabled block for this product and picked
+              other products. Each extra product is one owner-chosen picker; blanks, repeats and deleted
+              products are skipped. The original is always first, and the cycle wraps back to it.
+            {%- endcomment -%}
+            {%- assign sw_count = 1 -%}
+            {%- assign sw_secs = 4 -%}
+            {%- assign sw_done = false -%}
+            {%- capture sw_slides -%}
+              {%- for b in section.blocks -%}
+                {%- if b.type == 'auto_switch' and b.settings.enabled and sw_done == false and b.settings.product.handle == handle -%}
+                  {%- assign sw_done = true -%}
+                  {%- assign sw_secs = b.settings.interval | default: 4 -%}
+                  {%- assign sw_seen = '|' | append: handle | append: '|' -%}
+                  {%- assign sw_keys = 'next_product,product_3,product_4,product_5,product_6' | split: ',' -%}
+                  {%- for key in sw_keys -%}
+                    {%- assign cand = b.settings[key] -%}
+                    {%- assign cand_token = '|' | append: cand.handle | append: '|' -%}
+                    {%- unless sw_seen contains cand_token -%}
+                      {%- if cand.handle != blank and cand.title != blank -%}
+                        {%- assign sw_seen = sw_seen | append: cand.handle | append: '|' -%}
+                        {%- assign sw_count = sw_count | plus: 1 -%}
+                        <span class="iz-sw__slide" data-href="{{ cand.url }}" aria-hidden="true">
+                          {{
+                            cand.featured_media
+                            | image_url: width: 1000
+                            | image_tag:
+                              class: 'iz-item__img',
+                              loading: 'lazy',
+                              widths: '300, 500, 800, 1000',
+                              sizes: '(max-width: 749px) 40vw, 14vw',
+                              alt: cand.title,
+                              draggable: 'false'
+                          }}
+                          <span class="iz-item__tag">
+                            <span class="iz-item__name">{{ cand.title | escape }}</span>
+                            <span class="iz-item__price">{{ cand.price | money }}</span>
+                          </span>
+                        </span>
+                      {%- endif -%}
+                    {%- endunless -%}
+                  {%- endfor -%}
+                {%- endif -%}
+              {%- endfor -%}
+            {%- endcapture -%}
             <a
               class="iz-item iz-item--{{ style | escape }}"
               href="{{ product.url }}"
               data-iz-item
               data-id="{{ idx }}"
               data-handle="{{ handle | escape }}"
-              {% if sw %}data-iz-switch="{{ sw_secs }}"{% endif %}
+              {% if sw_count > 1 %}data-iz-switch="{{ sw_secs }}"{% endif %}
               {% if dv == 0 %}data-hd{% endif %}
               {% if mv == 0 %}data-hm{% endif %}
               style="--i:{{ idx }};--dx:{{ dx }};--dy:{{ dy }};--dw:{{ dw }};--dr:{{ dr }};--dz:{{ dz }};--do:{{ dop }};--ds:{{ ds }};--mx:{{ mx }};--my:{{ my }};--mw:{{ mw }};--mr:{{ mr }};--mz:{{ mz }};--mo:{{ mop }};--ms:{{ ms }};"
@@ -158,6 +189,8 @@
                     class="iz-item__img"
                     src="{{ custom_img | escape }}"
                     alt="{{ product.title | escape }}"
+                    width="1000"
+                    height="1000"
                     loading="lazy"
                     decoding="async"
                     draggable="false"
@@ -181,31 +214,14 @@
                 </span>
               {%- endcapture -%}
 
-              {%- if sw -%}
+              {%- if sw_count > 1 -%}
                 {%- comment -%}
-                  Both products sit in one grid cell, so the box never changes size and nothing shifts when they swap.
+                  All products sit in one grid cell, so the box never changes size and nothing shifts when they change.
                   Position, width, rotation, layer, opacity and shadow all come from the one placement.
                 {%- endcomment -%}
-                {%- capture next_media -%}
-                  {{
-                    sw.featured_media
-                    | image_url: width: 1000
-                    | image_tag:
-                      class: 'iz-item__img',
-                      loading: 'lazy',
-                      widths: '300, 500, 800, 1000',
-                      sizes: '(max-width: 749px) 40vw, 14vw',
-                      alt: sw.title,
-                      draggable: 'false'
-                  }}
-                  <span class="iz-item__tag">
-                    <span class="iz-item__name">{{ sw.title | escape }}</span>
-                    <span class="iz-item__price">{{ sw.price | money }}</span>
-                  </span>
-                {%- endcapture -%}
                 <span class="iz-sw__stack">
                   <span class="iz-sw__slide is-current" data-href="{{ product.url }}">{{ item_media }}</span>
-                  <span class="iz-sw__slide" data-href="{{ sw.url }}" aria-hidden="true">{{ next_media }}</span>
+                  {{ sw_slides }}
                 </span>
               {%- else -%}
                 {{ item_media }}
@@ -606,6 +622,7 @@
     { "type": "paragraph", "content": "Edit these visually: open your home page with ?izaven-editor=1 added to the address (for an unpublished theme use the Preview link first, then add &izaven-editor=1). Drag products into place, and switch to Latest cards to scale and move each card's picture. Press Copy layout, then paste it into the box below and save. Up to 20 placements." },
     { "type": "range", "id": "placement_scale_desktop", "label": "Scale all placements: desktop", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100, "info": "Multiplies the width of every placement on desktop. Use the visual editor to size a single product." },
     { "type": "range", "id": "placement_scale_mobile", "label": "Scale all placements: mobile", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100 },
+    { "type": "text", "id": "apply_repo", "label": "GitHub repository for one-click apply (optional)", "info": "Leave empty unless you have set up the apply workflow described in docs/izaven-showroom.md. Format: owner/repository." },
     { "type": "textarea", "id": "layout", "label": "Placement layout", "default": "# handle | style | desktop x,y,w,r,z,o,s,v | mobile x,y,w,r,z,o,s,v\nmens-premium-polo | f | 50,64,10,0,3,100,45,1 | 50,47,26,0,3,100,45,1" },
 
     { "type": "header", "content": "Featured products" },
@@ -632,10 +649,14 @@
       "name": "Auto-switch product",
       "limit": 20,
       "settings": [
-        { "type": "paragraph", "content": "Makes one product on the studio swap to another you choose, in the same spot, at the same size. It alternates between the two. Add one block per product." },
+        { "type": "paragraph", "content": "Makes one product on the studio change into the products you choose, in the same spot at the same size. It goes through them in order, then back to the first, and repeats. Add one block per product." },
         { "type": "product", "id": "product", "label": "Product on the studio", "info": "Must already be placed in the Placement layout. If it is placed more than once, each placement switches." },
         { "type": "checkbox", "id": "enabled", "label": "Enable automatic switching", "default": true },
-        { "type": "product", "id": "next_product", "label": "Next product", "info": "You choose it. Nothing is picked for you. It uses the original's position, size, rotation and layer." },
+        { "type": "product", "id": "next_product", "label": "Product 2 (next)", "info": "You choose every product. Nothing is picked for you." },
+        { "type": "product", "id": "product_3", "label": "Product 3 (optional)" },
+        { "type": "product", "id": "product_4", "label": "Product 4 (optional)" },
+        { "type": "product", "id": "product_5", "label": "Product 5 (optional)" },
+        { "type": "product", "id": "product_6", "label": "Product 6 (optional)", "info": "Leave a slot empty to skip it. A product picked twice appears once." },
         { "type": "range", "id": "interval", "label": "Switching interval", "min": 2, "max": 30, "step": 1, "unit": "s", "default": 4 }
       ]
     }
