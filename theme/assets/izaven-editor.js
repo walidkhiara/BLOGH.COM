@@ -40,7 +40,7 @@
     var items = [];
     String(text || '').split(/\r?\n/).forEach(function (raw) {
       var line = raw.trim();
-      if (!line || line.charAt(0) === '#' || line.indexOf('|') < 0) return;
+      if (!line || line.charAt(0) === '#' || line.charAt(0) === '@' || line.indexOf('|') < 0) return;
       var f = line.split('|').map(function (s) { return s.trim(); });
       items.push({
         id: items.length + 1,
@@ -54,14 +54,34 @@
     return items;
   }
 
+  var CARD_LIMITS = { s: [20, 300], x: [-100, 100], y: [-100, 100] };
+  function parseCards(text) {
+    var out = {};
+    String(text || '').split(/\r?\n/).forEach(function (raw) {
+      var line = raw.trim();
+      if (line.indexOf('@card') !== 0) return;
+      var f = line.slice(5).split('|').map(function (x) { return x.trim(); });
+      if (!f[0]) return;
+      var p = String(f[1] || '').split(',').map(parseFloat);
+      out[f[0]] = { s: isNaN(p[0]) ? 100 : p[0], x: isNaN(p[1]) ? 0 : p[1], y: isNaN(p[2]) ? 0 : p[2] };
+    });
+    return out;
+  }
+
   function num(v, dp) { return String(+(+v).toFixed(dp)); }
   function fmt(c) {
     return [num(c.x, 2), num(c.y, 2), num(c.w, 2), num(c.r, 1), num(c.z, 0), num(c.o, 0), num(c.s, 0), c.v ? 1 : 0].join(',');
   }
-  function serialize(items) {
-    return [HEADER].concat(items.map(function (it) {
+  function serialize(items, cards) {
+    var lines = [HEADER].concat(items.map(function (it) {
       return [it.handle, it.style, fmt(it.d), fmt(it.m)].concat(it.img ? [it.img] : []).join(' | ');
-    })).join('\n');
+    }));
+    Object.keys(cards || {}).forEach(function (h) {
+      var c = cards[h];
+      if (c.s === 100 && c.x === 0 && c.y === 0) return; // defaults are not stored
+      lines.push('@card ' + h + ' | ' + [num(c.s, 1), num(c.x, 1), num(c.y, 1)].join(','));
+    });
+    return lines.join('\n');
   }
   function clamp(v, lo, hi) { return Math.min(hi, Math.max(lo, v)); }
   function esc(s) {
@@ -76,7 +96,10 @@
     'html.iz-editing,html.iz-editing body{overflow:hidden!important}',
     'html.iz-editing .iz{position:fixed;inset:0 360px 0 0;z-index:2147482000;overflow:auto;background:#0a0a0c;overscroll-behavior:contain}',
     'html.iz-editing .iz-stage{margin:0 auto;flex:none;max-width:100%;box-shadow:0 0 0 1px rgba(255,255,255,.08)}',
-    'html.iz-editing .iz-feature,html.iz-editing .iz-fade,html.iz-editing .iz-editor-hint{display:none!important}',
+    'html.iz-editing .iz-fade,html.iz-editing .iz-editor-hint{display:none!important}',
+    'html.iz-editing .iz-card{cursor:grab;touch-action:none}',
+    'html.iz-editing .iz-card__media img{scale:none!important;transition:none!important;-webkit-user-drag:none}',
+    'html.iz-editing .iz-card.is-selected .iz-card__media{outline:2px solid #ffeed6;outline-offset:-2px}',
     'html.iz-editing .iz-nav,html.iz-editing .iz-hero-copy{opacity:.3;pointer-events:none}',
     'html.iz-editing .iz-item{cursor:grab;touch-action:none;transition:none!important;translate:none!important;scale:none!important;opacity:calc(var(--o)/100)!important}',
     'html.iz-editing .iz-item.is-ghost{display:block!important;opacity:.26!important;outline:1px dashed rgba(255,255,255,.6)}',
@@ -104,7 +127,8 @@
     '.ized-btn{min-height:34px;padding:0 12px;background:transparent;border:1px solid var(--line);cursor:pointer;font-size:12px}',
     '.ized-btn:hover:not(:disabled){border-color:rgba(255,238,214,.6)}',
     '.ized-btn:disabled{opacity:.35;cursor:default}',
-    '.ized-btn--primary{background:var(--warm);color:#111;border-color:var(--warm);font-weight:600}',
+    '.ized .ized-btn--primary{background:var(--warm);color:#111;border-color:var(--warm);font-weight:600}',
+    '.ized .ized-btn--primary:hover:not(:disabled){color:#111}',
     '.ized-btn--danger:hover:not(:disabled){border-color:#e07a6a;color:#e07a6a}',
     '.ized :focus-visible{outline:2px solid var(--warm);outline-offset:2px}',
     '.ized-seg{display:grid;grid-template-columns:1fr 1fr;border:1px solid var(--line)}',
@@ -157,6 +181,10 @@
     var catalogList = [];
     var els = {}; // id -> element (kept after removal so undo can restore it)
     var items = parseLayout(liveText);
+    var cards = parseCards(liveText);
+    var view = 'studio';
+    var selCard = null;
+    var cardGesture = null;
     var nextId = items.length + 1;
     var mode = 'desktop';
     var device = 'fit';
@@ -165,7 +193,7 @@
     var future = [];
     var grouping = false;
     var groupTimer = null;
-    var savedText = liveText ? serialize(parseLayout(liveText)) : serialize([]);
+    var savedText = serialize(parseLayout(liveText), parseCards(liveText));
     var liveNormalized = savedText;
     var gesture = null;
     var bgSource = root.querySelector('picture source');
@@ -179,8 +207,9 @@
         var draft = JSON.parse(raw);
         if (draft && draft.text && draft.text !== liveNormalized) {
           items = parseLayout(draft.text);
+          cards = parseCards(draft.text);
           nextId = items.length + 1;
-          savedText = serialize(items);
+          savedText = serialize(items, cards);
           restored = true;
         }
       }
@@ -204,15 +233,22 @@
     panel.innerHTML =
       '<header class="ized-head"><strong>Placement studio</strong><button type="button" class="ized-btn" data-act="exit">Exit</button></header>' +
       '<div class="ized-scroll">' +
+        '<section><div class="ized-seg" role="group" aria-label="What you are editing">' +
+          '<button type="button" data-view="studio" aria-pressed="true">Studio</button>' +
+          '<button type="button" data-view="cards" aria-pressed="false">Latest cards</button></div></section>' +
         '<section><div class="ized-seg" role="group" aria-label="Which layout you are editing">' +
           '<button type="button" data-mode="desktop" aria-pressed="true">Desktop</button>' +
           '<button type="button" data-mode="mobile" aria-pressed="false">Mobile</button></div>' +
           '<label class="row" style="grid-template-columns:78px 1fr;margin-top:10px"><span>Preview</span><select data-ctl="device" aria-label="Preview width"></select></label>' +
           '<p class="ized-help">Desktop and mobile are separate layouts on separate photographs. Editing one never changes the other.</p></section>' +
+        '<div data-pane="studio">' +
         '<section><h3>Placements <span data-count></span></h3><ul class="ized-list" data-list></ul>' +
           '<div class="ized-two"><button type="button" class="ized-btn" data-act="scale-down" title="Make every placement 10% smaller on this layout">Scale all −10%</button><button type="button" class="ized-btn" data-act="scale-up" title="Make every placement 10% larger on this layout">Scale all +10%</button></div>' +
           '<div style="margin-top:10px"><input type="search" data-ctl="search" placeholder="Add a product from your store…" aria-label="Search products to add"><ul class="ized-results" data-results></ul></div></section>' +
-        '<section data-inspector></section>' +
+        '<section data-inspector></section></div>' +
+        '<div data-pane="cards" hidden><section><h3>Latest cards <span data-card-count></span></h3><ul class="ized-list" data-card-list></ul>' +
+          '<p class="ized-help">Click a card, then drag its picture inside its frame, or use the sliders. Each card is independent. The same setting applies on desktop and mobile.</p></section>' +
+          '<section data-card-inspector></section></div>' +
         '<section><details><summary>Layout text (advanced)</summary>' +
           '<textarea data-ctl="text" spellcheck="false" aria-label="Layout text"></textarea>' +
           '<div class="ized-two"><button type="button" class="ized-btn" data-act="apply-text">Apply text</button><button type="button" class="ized-btn" data-act="download">Download .txt</button></div></details></section>' +
@@ -232,6 +268,7 @@
     stage.appendChild(box);
 
     var $ = function (sel) { return panel.querySelector(sel); };
+    var feature = root.querySelector('.iz-feature');
     var listEl = $('[data-list]');
     var resultsEl = $('[data-results]');
     var inspector = $('[data-inspector]');
@@ -241,7 +278,9 @@
 
     /* ---------- model helpers ---------- */
 
-    function snap() { return JSON.stringify(items); }
+    function snap() { return JSON.stringify({ i: items, c: cards }); }
+    function ser() { return serialize(items, cards); }
+    function pack(text) { return JSON.stringify({ i: parseLayout(text), c: parseCards(text) }); }
     function cfg(it) { return mode === 'desktop' ? it.d : it.m; }
     function cur() { for (var i = 0; i < items.length; i++) if (items[i].id === selId) return items[i]; return null; }
     function byId(id) { for (var i = 0; i < items.length; i++) if (items[i].id === +id) return items[i]; return null; }
@@ -350,11 +389,16 @@
       if (bgSource) bgSource.setAttribute('media', mode === 'mobile' ? 'all' : '(max-width: 0px)');
       var w = device === 'fit' ? '100%' : device + 'px';
       stage.style.width = w;
+      if (feature) {
+        feature.style.width = w; feature.style.maxWidth = '100%'; feature.style.margin = '0 auto';
+        feature.setAttribute('data-force', mode === 'mobile' ? 'mobile' : (device !== 'fit' && +device <= 989 ? 'tablet' : 'desktop'));
+      }
       panel.querySelectorAll('[data-mode]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-mode') === mode)); });
       deviceEl.innerHTML = DEVICES[mode].map(function (d) {
         return '<option value="' + d[0] + '"' + (d[0] === device ? ' selected' : '') + '>' + d[1] + '</option>';
       }).join('');
       syncAll();
+      syncCards();
       renderList();
       renderInspector();
       placeBox();
@@ -470,7 +514,7 @@
     }
 
     function dirtyState() {
-      var now = serialize(items);
+      var now = ser();
       textEl.value = now;
       var parts = [];
       if (now === liveNormalized) parts.push('<b>Matches your store.</b>');
@@ -560,17 +604,19 @@
     }
 
     function restore(text) {
-      items = JSON.parse(text);
+      var o = JSON.parse(text);
+      items = o.i;
+      cards = o.c || {};
       if (!byId(selId)) selId = null;
       nextId = Math.max.apply(null, [nextId].concat(items.map(function (x) { return x.id + 1; })));
-      syncAll(); renderList(); renderInspector(); renderResults(); placeBox(); dirtyState();
+      syncAll(); syncCards(); renderList(); renderInspector(); renderResults(); renderCardList(); renderCardInspector(); placeBox(); dirtyState();
     }
 
     function undo() { if (!past.length) return; future.push(snap()); restore(past.pop()); buttons(); }
     function redo() { if (!future.length) return; past.push(snap()); restore(future.pop()); buttons(); }
 
     function save() {
-      var text = serialize(items);
+      var text = ser();
       try {
         localStorage.setItem(STORE_KEY, JSON.stringify({ at: Date.now(), text: text }));
         savedText = text;
@@ -582,7 +628,7 @@
     }
 
     function copyLayout() {
-      var text = serialize(items);
+      var text = ser();
       var done = function () {
         say('<b>Layout copied.</b> Theme editor → Home → Studio showroom → Placement layout → paste → Save.');
       };
@@ -602,6 +648,119 @@
       location.href = u.toString();
     }
 
+    /* ---------- latest cards ---------- */
+
+    function cardHandle(a) {
+      var m = (a.getAttribute('href') || '').match(/\/products\/([^/?#]+)/);
+      return m ? decodeURIComponent(m[1]) : '';
+    }
+    function cardLinks() { return feature ? [].slice.call(feature.querySelectorAll('.iz-card')) : []; }
+    function cardOf(h) { return cards[h] || { s: 100, x: 0, y: 0 }; }
+    function cardLink(h) { return cardLinks().filter(function (a) { return cardHandle(a) === h; })[0]; }
+
+    function syncCards() {
+      cardLinks().forEach(function (a) {
+        var h = cardHandle(a); var c = cardOf(h); var m = a.querySelector('.iz-card__media');
+        if (m) { m.style.setProperty('--cs', c.s); m.style.setProperty('--cx', c.x); m.style.setProperty('--cy', c.y); }
+        a.classList.toggle('is-selected', view === 'cards' && h === selCard);
+      });
+    }
+
+    function renderCardList() {
+      var list = $('[data-card-list]'); var links = cardLinks();
+      $('[data-card-count]').textContent = links.length ? String(links.length) : '';
+      if (!links.length) {
+        list.innerHTML = '<li class="ized-empty" style="display:block;cursor:default;background:none">The Latest strip is hidden or empty. Raise "Products to show" in the section settings.</li>';
+        return;
+      }
+      list.innerHTML = links.map(function (a) {
+        var h = cardHandle(a); var c = cardOf(h); var img = a.querySelector('img');
+        var moved = c.s !== 100 || c.x !== 0 || c.y !== 0;
+        return '<li data-card="' + esc(h) + '" tabindex="0" role="option" aria-selected="' + (h === selCard) + '">' +
+          '<img class="ized-thumb" alt="" src="' + esc(img ? img.currentSrc || img.src : '') + '">' +
+          '<span class="ized-name">' + esc((a.querySelector('.iz-card__name') || {}).textContent || h) + '<span class="ized-sub">' + (moved ? 'Scale ' + num(c.s, 0) + '% · moved' : 'Default') + '</span></span><span></span></li>';
+      }).join('');
+    }
+
+    function cardField(label, key, c, step) {
+      var lim = CARD_LIMITS[key];
+      return '<label class="row"><span>' + label + '</span>' +
+        '<input type="range" data-cf="' + key + '" min="' + lim[0] + '" max="' + lim[1] + '" step="' + step + '" value="' + c[key] + '" aria-label="' + label + '">' +
+        '<input type="number" data-cf="' + key + '" min="' + lim[0] + '" max="' + lim[1] + '" step="' + step + '" value="' + num(c[key], 1) + '" aria-label="' + label + ' value"></label>';
+    }
+
+    function renderCardInspector() {
+      var box_ = $('[data-card-inspector]');
+      var a = selCard && cardLink(selCard);
+      if (!a) { box_.innerHTML = '<h3>Selected card</h3><p class="ized-empty">Click a card in the strip, or pick one above.</p>'; return; }
+      var c = cardOf(selCard);
+      box_.innerHTML = '<h3>' + esc((a.querySelector('.iz-card__name') || {}).textContent || selCard) + '</h3>' +
+        cardField('Scale %', 's', c, 1) + cardField('Move left / right', 'x', c, 0.5) + cardField('Move up / down', 'y', c, 0.5) +
+        '<div class="ized-two"><button type="button" class="ized-btn" data-act="card-reset">Reset this card</button><button type="button" class="ized-btn" data-act="card-reset-all">Reset all cards</button></div>' +
+        '<p class="ized-help">Scale grows the picture from its centre. Parts that leave the frame are cropped, exactly as on your store.</p>';
+    }
+
+    function refreshCardValues(except) {
+      if (!selCard) return;
+      var c = cardOf(selCard);
+      panel.querySelectorAll('[data-card-inspector] [data-cf]').forEach(function (inp) {
+        if (inp !== except) inp.value = inp.type === 'number' ? num(c[inp.getAttribute('data-cf')], 1) : c[inp.getAttribute('data-cf')];
+      });
+    }
+
+    function setCard(h, k, v) {
+      var lim = CARD_LIMITS[k];
+      var c = cards[h] ? cards[h] : (cards[h] = { s: 100, x: 0, y: 0 });
+      c[k] = clamp(v, lim[0], lim[1]);
+    }
+
+    function selectCard(h) {
+      selCard = h;
+      syncCards(); renderCardList(); renderCardInspector();
+    }
+
+    function setView(v) {
+      view = v;
+      panel.querySelectorAll('[data-view]').forEach(function (b) { b.setAttribute('aria-pressed', String(b.getAttribute('data-view') === v)); });
+      panel.querySelectorAll('[data-pane]').forEach(function (p) { p.hidden = p.getAttribute('data-pane') !== v; });
+      if (v === 'cards') {
+        box.hidden = true;
+        if (!selCard && cardLinks()[0]) selCard = cardHandle(cardLinks()[0]);
+        if (feature) root.scrollTop = feature.offsetTop - 16;
+      } else placeBox();
+      syncCards(); renderCardList(); renderCardInspector();
+    }
+
+    if (feature) {
+      feature.addEventListener('click', function (e) { if (e.target.closest('.iz-card')) e.preventDefault(); }, true);
+      feature.addEventListener('pointerdown', function (e) {
+        if (view !== 'cards' || (e.pointerType === 'mouse' && e.button !== 0)) return;
+        var a = e.target.closest('.iz-card');
+        if (!a) return;
+        e.preventDefault();
+        var h = cardHandle(a); var c = cardOf(h);
+        var img = a.querySelector('.iz-card__media img');
+        selectCard(h);
+        cardGesture = { h: h, x0: c.x, y0: c.y, sx: e.clientX, sy: e.clientY, w: (img && img.offsetWidth) || 1, hh: (img && img.offsetHeight) || 1, moved: false };
+        try { feature.setPointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+      });
+      feature.addEventListener('pointermove', function (e) {
+        var g = cardGesture; if (!g) return;
+        if (!g.moved) { g.moved = true; pushHistory(); }
+        setCard(g.h, 'x', g.x0 + ((e.clientX - g.sx) / g.w) * 100);
+        setCard(g.h, 'y', g.y0 + ((e.clientY - g.sy) / g.hh) * 100);
+        syncCards(); refreshCardValues();
+      });
+      var endCard = function (e) {
+        if (!cardGesture) return;
+        var moved = cardGesture.moved; cardGesture = null;
+        try { feature.releasePointerCapture(e.pointerId); } catch (err) { /* ignore */ }
+        if (moved) { renderCardList(); dirtyState(); }
+      };
+      feature.addEventListener('pointerup', endCard);
+      feature.addEventListener('pointercancel', endCard);
+    }
+
     /* ---------- pointer gestures ---------- */
 
     function pct(e) {
@@ -614,6 +773,7 @@
     }, true);
 
     stage.addEventListener('pointerdown', function (e) {
+      if (view !== 'studio') return;
       if (e.pointerType === 'mouse' && e.button !== 0) return;
       var h = e.target.closest('[data-h]');
       var a = e.target.closest('[data-iz-item]');
@@ -673,6 +833,10 @@
 
     panel.addEventListener('click', function (e) {
       var t = e.target;
+      var vw = t.closest('[data-view]');
+      if (vw) { setView(vw.getAttribute('data-view')); return; }
+      var crow = t.closest('[data-card]');
+      if (crow) { selectCard(crow.getAttribute('data-card')); var la = cardLink(selCard); if (la) la.scrollIntoView({ block: 'center' }); return; }
       var m = t.closest('[data-mode]');
       if (m) { mode = m.getAttribute('data-mode'); device = DEVICES[mode][0][0]; applyMode(); return; }
       var tog = t.closest('[data-toggle]');
@@ -696,6 +860,12 @@
         case 'save': save(); break;
         case 'copy': copyLayout(); break;
         case 'remove': removeSel(); break;
+        case 'card-reset':
+          if (selCard) { pushHistory(); delete cards[selCard]; syncCards(); renderCardInspector(); renderCardList(); dirtyState(); }
+          break;
+        case 'card-reset-all':
+          pushHistory(); cards = {}; syncCards(); renderCardInspector(); renderCardList(); dirtyState(); say('<b>All cards reset</b> to the default.');
+          break;
         case 'scale-down': scaleAll(0.9); break;
         case 'scale-up': scaleAll(1.1); break;
         case 'forward': swapLayer(1); break;
@@ -714,11 +884,11 @@
           }
           break;
         case 'cancel':
-          pushHistory(); restore(JSON.stringify(parseLayout(savedText))); say('<b>Cancelled.</b> Back to your last saved state.'); break;
+          pushHistory(); restore(pack(savedText)); say('<b>Cancelled.</b> Back to your last saved state.'); break;
         case 'apply-text':
-          pushHistory(); items = parseLayout(textEl.value); nextId = items.length + 1; selId = null; syncAll(); renderList(); renderInspector(); renderResults(); placeBox(); dirtyState(); say('<b>Layout text applied.</b>'); break;
+          pushHistory(); items = parseLayout(textEl.value); cards = parseCards(textEl.value); nextId = items.length + 1; selId = null; syncAll(); syncCards(); renderCardList(); renderCardInspector(); renderList(); renderInspector(); renderResults(); placeBox(); dirtyState(); say('<b>Layout text applied.</b>'); break;
         case 'download': {
-          var blob = new Blob([serialize(items)], { type: 'text/plain' });
+          var blob = new Blob([ser()], { type: 'text/plain' });
           var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'izaven-placements.txt'; a.click();
           setTimeout(function () { URL.revokeObjectURL(a.href); }, 1000);
           break;
@@ -737,6 +907,13 @@
       var t = e.target;
       if (t.getAttribute('data-ctl') === 'search') { renderResults(); return; }
       if (t.getAttribute('data-ctl') === 'device') return;
+      var ck = t.getAttribute('data-cf');
+      if (ck) {
+        var cv = parseFloat(t.value);
+        if (!selCard || isNaN(cv)) return;
+        touch(); setCard(selCard, ck, cv); syncCards(); refreshCardValues(t); renderCardList(); dirtyState();
+        return;
+      }
       var it = cur();
       if (!it) return;
       if (t.hasAttribute('data-img')) { touch(); it.img = t.value.trim(); syncEl(it); renderList(); dirtyState(); return; }
@@ -769,6 +946,22 @@
       if (mod && e.key.toLowerCase() === 'z') { if (typing && tag === 'textarea') return; e.preventDefault(); if (e.shiftKey) redo(); else undo(); return; }
       if (mod && e.key.toLowerCase() === 'y') { e.preventDefault(); redo(); return; }
       if (typing) return;
+      if (view === 'cards') {
+        if (!selCard) return;
+        var cc = cardOf(selCard); var st = e.shiftKey ? 5 : 0.5; var ok_ = true;
+        switch (e.key) {
+          case 'ArrowLeft': touch(); setCard(selCard, 'x', cc.x - st); break;
+          case 'ArrowRight': touch(); setCard(selCard, 'x', cc.x + st); break;
+          case 'ArrowUp': touch(); setCard(selCard, 'y', cc.y - st); break;
+          case 'ArrowDown': touch(); setCard(selCard, 'y', cc.y + st); break;
+          case '+': case '=': touch(); setCard(selCard, 's', cc.s + (e.shiftKey ? 10 : 2)); break;
+          case '-': case '_': touch(); setCard(selCard, 's', cc.s - (e.shiftKey ? 10 : 2)); break;
+          case 'Escape': selCard = null; syncCards(); renderCardList(); renderCardInspector(); return;
+          default: ok_ = false;
+        }
+        if (ok_) { e.preventDefault(); syncCards(); refreshCardValues(); renderCardList(); dirtyState(); }
+        return;
+      }
       var it = cur();
       if (!it) return;
       var c = cfg(it);
@@ -791,7 +984,7 @@
     });
 
     window.addEventListener('beforeunload', function (e) {
-      if (serialize(items) !== savedText) { e.preventDefault(); e.returnValue = ''; }
+      if (ser() !== savedText) { e.preventDefault(); e.returnValue = ''; }
     });
 
     if ('ResizeObserver' in window) new ResizeObserver(placeBox).observe(stage);
@@ -805,6 +998,8 @@
       if (el && el.getAttribute('data-handle') === it.handle) els[it.id] = el;
     });
     applyMode();
+    renderCardList();
+    renderCardInspector();
     buttons();
     dirtyState();
     if (restored) say('<b>Restored your saved draft.</b> It differs from your store. Cancel returns to the draft; Copy layout publishes it.');
@@ -830,5 +1025,5 @@
       });
   }
 
-  window.IzavenEditor = { open: open, parse: parseLayout, serialize: serialize };
+  window.IzavenEditor = { open: open, parse: parseLayout, parseCards: parseCards, serialize: serialize };
 })();

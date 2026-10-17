@@ -25,6 +25,13 @@ Files live in `theme/` and mirror a Shopify theme (Horizon). Nothing here touche
 
 Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer, Delete removes, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
 
+## Scaling and moving each product on its own
+
+- **Studio placements:** select one, then drag it, use the corner squares to resize and the circle to rotate, or type exact values. Every placement is independent.
+- **Latest cards:** switch to **Latest cards** at the top of the editor panel. Click a card, then drag its picture inside its frame, or use the **Scale %**, **Move left / right** and **Move up / down** sliders. Arrow keys nudge it and `+` / `-` scale it. Each card is independent. Scale grows the picture from its centre and anything outside the frame is cropped, exactly as on the store. One setting applies to both desktop and mobile. **Reset this card** and **Reset all cards** return to the default.
+
+Card settings are saved in the same layout text as `@card handle | scale,x,y` lines, so there is still one paste. Cards you have not changed are not written.
+
 ## Sizing without the editor (theme editor settings)
 
 In **Home → Studio showroom**:

@@ -90,7 +90,7 @@
           assign line = raw | strip
           assign first = line | slice: 0, 1
           assign is_item = false
-          if line != blank and first != '#' and line contains '|'
+          if line != blank and first != '#' and first != '@' and line contains '|'
             assign is_item = true
           endif
         -%}
@@ -220,9 +220,28 @@
       </div>
       <ul class="iz-feature__grid">
         {%- for product in fc.products limit: section.settings.featured_count -%}
+          {%- liquid
+            assign cs = 100
+            assign cx = 0
+            assign cy = 0
+            for raw_line in lines
+              assign cl = raw_line | strip
+              assign ctag = cl | slice: 0, 5
+              if ctag == '@card'
+                assign cf = cl | remove_first: '@card' | split: '|'
+                assign ch = cf[0] | strip
+                if ch == product.handle
+                  assign cp = cf[1] | split: ','
+                  assign cs = cp[0] | strip | default: 100 | plus: 0
+                  assign cx = cp[1] | strip | default: 0 | plus: 0
+                  assign cy = cp[2] | strip | default: 0 | plus: 0
+                endif
+              endif
+            endfor
+          -%}
           <li>
             <a class="iz-card" href="{{ product.url }}">
-              <span class="iz-card__media">
+              <span class="iz-card__media" style="--cs:{{ cs }};--cx:{{ cx }};--cy:{{ cy }};">
                 {%- if product.featured_media -%}
                   {{
                     product.featured_media
@@ -479,8 +498,12 @@
   @media (max-width: 749px) { .iz-feature__grid { grid-template-columns: repeat(var(--izc-m, 2), minmax(0, 1fr)); } }
   .iz-card { display: grid; gap: 6px; color: inherit; text-decoration: none; }
   .iz-card__media { display: grid; place-items: center; aspect-ratio: var(--izc-ratio, 4 / 5); overflow: hidden; background: var(--iz-ink); border: 1px solid var(--iz-line); }
-  .iz-card__media img { width: var(--izc-size, 100%); height: var(--izc-size, 100%); object-fit: var(--izc-fit, cover); display: block; transition: scale 0.8s var(--iz-ease); }
+  .iz-card__media img { width: var(--izc-size, 100%); height: var(--izc-size, 100%); object-fit: var(--izc-fit, cover); display: block; transform: translate(calc(var(--cx, 0) * 1%), calc(var(--cy, 0) * 1%)) scale(calc(var(--cs, 100) / 100)); transition: scale 0.8s var(--iz-ease); }
   .iz-card:hover .iz-card__media img { scale: 1.04; }
+  /* Editor previews of the strip at a chosen width (viewport media queries cannot see the preview frame). */
+  .iz-feature[data-force='mobile'] .iz-feature__grid { grid-template-columns: repeat(var(--izc-m, 2), minmax(0, 1fr)); }
+  .iz-feature[data-force='tablet'] .iz-feature__grid { grid-template-columns: repeat(min(var(--izc-d, 4), 3), minmax(0, 1fr)); }
+  .iz-feature[data-force='desktop'] .iz-feature__grid { grid-template-columns: repeat(var(--izc-d, 4), minmax(0, 1fr)); }
   .iz-card:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 4px; }
   .iz-card__name { margin-top: 8px; font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase; }
   .iz-card__price { color: var(--iz-muted); font-size: 12px; letter-spacing: 0.06em; }
@@ -518,7 +541,7 @@
     { "type": "checkbox", "id": "show_nav", "label": "Show navigation over the studio", "default": true },
 
     { "type": "header", "content": "Product placements" },
-    { "type": "paragraph", "content": "Edit these visually: open your home page with ?izaven-editor=1 added to the address (for an unpublished theme use the Preview link first, then add &izaven-editor=1). Drag products into place, press Copy layout, then paste it into the box below and save. Up to 20 placements." },
+    { "type": "paragraph", "content": "Edit these visually: open your home page with ?izaven-editor=1 added to the address (for an unpublished theme use the Preview link first, then add &izaven-editor=1). Drag products into place, and switch to Latest cards to scale and move each card's picture. Press Copy layout, then paste it into the box below and save. Up to 20 placements." },
     { "type": "range", "id": "placement_scale_desktop", "label": "Scale all placements: desktop", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100, "info": "Multiplies the width of every placement on desktop. Use the visual editor to size a single product." },
     { "type": "range", "id": "placement_scale_mobile", "label": "Scale all placements: mobile", "min": 50, "max": 200, "step": 5, "unit": "%", "default": 100 },
     { "type": "textarea", "id": "layout", "label": "Placement layout", "default": "# handle | style | desktop x,y,w,r,z,o,s,v | mobile x,y,w,r,z,o,s,v\nmens-premium-polo | f | 50,64,10,0,3,100,45,1 | 50,47,26,0,3,100,45,1" },
