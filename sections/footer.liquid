@@ -1,0 +1,82 @@
+<footer class="footer">
+  <div class="page-width footer__top" style="--footer-cols: {{ section.blocks.size | at_least: 1 | at_most: 4 }}">
+    <div class="footer__brand">
+      {% render 'logo', fill: '#fff' %}
+      {%- if section.settings.blurb != blank -%}<p class="muted" style="color:#b4b4b8;max-width:34ch">{{ section.settings.blurb | escape }}</p>{%- endif -%}
+      <div class="footer__social">
+        {%- assign networks = 'instagram,tiktok,youtube,facebook,x' | split: ',' -%}
+        {%- for net in networks -%}
+          {%- assign key = 'social_' | append: net -%}
+          {%- if settings[key] != blank -%}
+            <a href="{{ settings[key] }}" class="icon-btn" target="_blank" rel="noopener" aria-label="{{ 'general.social' | t: name: net }}">{% render 'icon', name: net %}</a>
+          {%- endif -%}
+        {%- endfor -%}
+      </div>
+    </div>
+    {%- for block in section.blocks -%}
+      <details class="footer__col" open {{ block.shopify_attributes }}>
+        <summary class="eyebrow">{{ block.settings.title | default: block.settings.menu.title | escape }} {% render 'icon', name: 'plus' %}</summary>
+        <ul role="list">
+          {%- for link in block.settings.menu.links -%}
+            <li><a href="{{ link.url }}">{{ link.title | escape }}</a></li>
+          {%- endfor -%}
+        </ul>
+      </details>
+    {%- endfor -%}
+  </div>
+
+  <div class="page-width footer__bottom">
+    <div class="footer__legal">
+      <span>&copy; {{ 'now' | date: '%Y' }} {{ shop.name | escape }}</span>
+      {%- for link in section.settings.legal_menu.links -%}<a href="{{ link.url }}">{{ link.title | escape }}</a>{%- endfor -%}
+    </div>
+    {%- if section.settings.show_localization and localization.available_countries.size > 1 -%}
+      {%- form 'localization', class: 'localization', data-localization: '' -%}
+        <label class="visually-hidden" for="FooterCountry">Country</label>
+        <select id="FooterCountry" name="country_code" onchange="this.form.submit()">
+          {%- for c in localization.available_countries -%}
+            <option value="{{ c.iso_code }}" {% if c.iso_code == localization.country.iso_code %}selected{% endif %}>{{ c.name }} ({{ c.currency.iso_code }} {{ c.currency.symbol }})</option>
+          {%- endfor -%}
+        </select>
+        <noscript><button type="submit">OK</button></noscript>
+      {%- endform -%}
+    {%- endif -%}
+    {%- if section.settings.show_payment -%}
+      <ul role="list" style="display:flex;gap:6px;flex-wrap:wrap">
+        {%- for type in shop.enabled_payment_types -%}<li>{{ type | payment_type_svg_tag: class: 'payment-icon' }}</li>{%- endfor -%}
+      </ul>
+    {%- endif -%}
+  </div>
+  {%- if section.settings.show_wordmark -%}
+    <div class="footer__wordmark" aria-hidden="true">
+      <svg viewBox="0 0 1000 190"><text x="0" y="178" textLength="1000" lengthAdjust="spacingAndGlyphs" style="font-family: var(--font-heading); font-weight: 900; font-size: 240px;">{{ section.settings.wordmark | default: shop.name | upcase | escape }}</text></svg>
+    </div>
+  {%- endif -%}
+</footer>
+<style>.payment-icon { height: 22px; width: auto; }</style>
+
+{% schema %}
+{
+  "name": "Footer",
+  "class": "section-footer",
+  "max_blocks": 4,
+  "settings": [
+    { "type": "textarea", "id": "blurb", "label": "Brand line", "default": "Performance apparel engineered in small batches, tested in real sessions." },
+    { "type": "link_list", "id": "legal_menu", "label": "Legal menu" },
+    { "type": "checkbox", "id": "show_localization", "label": "Show country / currency selector", "default": true },
+    { "type": "checkbox", "id": "show_payment", "label": "Show payment icons", "default": true },
+    { "type": "checkbox", "id": "show_wordmark", "label": "Show oversized wordmark", "default": true },
+    { "type": "text", "id": "wordmark", "label": "Wordmark text", "default": "BLOGH" }
+  ],
+  "blocks": [
+    {
+      "type": "menu",
+      "name": "Link column",
+      "settings": [
+        { "type": "text", "id": "title", "label": "Heading" },
+        { "type": "link_list", "id": "menu", "label": "Menu", "default": "footer" }
+      ]
+    }
+  ]
+}
+{% endschema %}

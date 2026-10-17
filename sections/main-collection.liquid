@@ -1,0 +1,94 @@
+{%- liquid
+  assign s = section.settings
+  assign img = collection.image
+  if s.show_image == false
+    assign img = nil
+  endif
+  assign active_count = 0
+  for filter in collection.filters
+    assign active_count = active_count | plus: filter.active_values.size
+  endfor
+  assign sort_by = collection.sort_by | default: collection.default_sort_by
+-%}
+{%- if img -%}
+  <div class="collection-hero" style="--focal: {{ img.presentation.focal_point | default: '50% 30%' }}">
+    <div class="banner__media">{{ img | image_url: width: 2600 | image_tag: widths: '750, 1100, 1500, 2000, 2600', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: img.alt | default: '' }}</div>
+    <div class="hero__scrim" aria-hidden="true" style="--scrim:.5"></div>
+    <div class="collection-hero__content">
+      <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a><span>/</span><span aria-current="page">{{ collection.title | escape }}</span></nav>
+      <h1 class="h-xl">{{ collection.title | escape }}</h1>
+      {%- if collection.description != blank and s.show_description -%}<div class="collection-hero__desc rte">{{ collection.description }}</div>{%- endif -%}
+    </div>
+  </div>
+{%- else -%}
+  <div class="page-width collection-head">
+    <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a><span>/</span><span aria-current="page">{{ collection.title | escape }}</span></nav>
+    <h1 class="h-xl">{{ collection.title | escape }}</h1>
+    {%- if collection.description != blank and s.show_description -%}<div class="rte muted" style="max-width:60ch">{{ collection.description }}</div>{%- endif -%}
+  </div>
+{%- endif -%}
+
+<div data-results-section data-section-id="{{ section.id }}">
+  {%- paginate collection.products by s.per_page -%}
+    <div class="toolbar" data-toolbar>
+      <div class="page-width toolbar__inner">
+        <p class="toolbar__count" role="status">{{ 'collections.products_count' | t: count: collection.products_count }}</p>
+        <div class="toolbar__controls">
+          <div class="select-wrap" style="display:none" data-desktop-sort>
+            <label for="SortBy-bar" class="visually-hidden">{{ 'collections.sort_by' | t }}</label>
+            <select id="SortBy-bar" data-sort-proxy>
+              {%- for option in collection.sort_options -%}
+                <option value="{{ option.value | escape }}" {% if option.value == sort_by %}selected{% endif %}>{{ option.name | escape }}</option>
+              {%- endfor -%}
+            </select>
+            {% render 'icon', name: 'chevron' %}
+          </div>
+          {%- if s.enable_filtering -%}
+            <button type="button" class="toolbar__btn" data-open-drawer="facets" aria-controls="FacetsDrawer" aria-expanded="false">
+              {% render 'icon', name: 'filter' %}
+              <span class="toolbar__label-long">{{ 'collections.filter_and_sort' | t }}</span>
+              {%- if active_count > 0 -%}<span class="toolbar__btn-count">{{ active_count }}</span>{%- endif -%}
+            </button>
+          {%- endif -%}
+        </div>
+      </div>
+    </div>
+
+    <div class="page-width results" data-results style="--cols-desktop: {{ s.columns }};">
+      {% render 'active-filters', results: collection %}
+      {%- if collection.products.size > 0 -%}
+        <ul class="product-grid" role="list" data-product-grid style="margin-top:16px">
+          {%- for product in collection.products -%}
+            {%- assign loading = 'lazy' -%}
+            {%- if forloop.index <= 4 -%}{%- assign loading = 'eager' -%}{%- endif -%}
+            <li>{% render 'product-card', product: product, loading: loading %}</li>
+          {%- endfor -%}
+        </ul>
+        {% render 'pagination', paginate: paginate %}
+      {%- else -%}
+        <div class="empty">
+          <p class="h-lg">{{ 'collections.empty' | t }}</p>
+          <a href="{{ collection.url }}" class="btn" data-facet-link>{{ 'collections.clear_all' | t }}</a>
+        </div>
+      {%- endif -%}
+    </div>
+
+    {%- if s.enable_filtering -%}
+      {% render 'facets', results: collection, sort_by: sort_by, sort_options: collection.sort_options, url: collection.url %}
+    {%- endif -%}
+  {%- endpaginate -%}
+</div>
+<style>@media (min-width: 750px) { [data-desktop-sort] { display: block !important; } }</style>
+
+{% schema %}
+{
+  "name": "Product grid",
+  "settings": [
+    { "type": "checkbox", "id": "show_image", "label": "Show collection image banner", "default": true },
+    { "type": "checkbox", "id": "show_description", "label": "Show description", "default": true },
+    { "type": "range", "id": "per_page", "label": "Products per page", "min": 12, "max": 48, "step": 4, "default": 24 },
+    { "type": "range", "id": "columns", "label": "Desktop columns", "min": 3, "max": 5, "step": 1, "default": 4 },
+    { "type": "checkbox", "id": "enable_filtering", "label": "Enable filter & sort", "default": true, "info": "Filters come from Search & Discovery app settings." }
+  ]
+}
+{% endschema %}

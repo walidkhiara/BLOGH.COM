@@ -1,57 +1,98 @@
-# 3D Hero section for Shopify
+# BLOGH Performance — Shopify theme
 
-An interactive WebGL hero (three.js) built as a drop-in Shopify theme section,
-tuned for a digital-products store.
+An Online Store 2.0 theme for a performance-apparel brand: edge-to-edge campaign
+photography, square geometry, a heavy condensed type system and restrained motion.
+Everything shoppable runs on the store's real products, variants, inventory, cart and
+checkout. No products are hardcoded.
 
-## What it does
+- Design system: [`docs/DESIGN-SYSTEM.md`](docs/DESIGN-SYSTEM.md)
+- Reference notes (the reference site could not be inspected): [`docs/REFERENCE-NOTES.md`](docs/REFERENCE-NOTES.md)
+- Test report: [`docs/TEST-REPORT.md`](docs/TEST-REPORT.md)
+- Screenshots (local harness, stand-in images): [`docs/screenshots/`](docs/screenshots)
 
-- Renders a chrome figure on a dark stage, lit with an HDR room environment.
-- Follows the pointer (parallax on the stage and camera), auto-rotates slowly,
-  leans in when a CTA is hovered, and pulses when the cart updates.
-- Drifting tiles orbit the figure to stand in for the "product" a digital store
-  has no physical shot of.
-- Respects `prefers-reduced-motion` and only renders while on screen.
-- Accepts your own `.glb` model — the built-in figure is just the fallback.
+## Structure
 
-## Install
+```
+layout/theme.liquid            page shell, SEO meta, theme JS config
+config/settings_schema.json    brand, colours, type, cards, cart, social, motion
+templates/*.json               index, collection, product, cart, search, page, blog, article,
+                               list-collections, 404, customers/*
+sections/
+  header-group.json            announcement bar + header (mega menu, mobile drawer)
+  footer-group.json            newsletter + footer
+  hero-banner                  campaign hero: desktop + mobile image, focal point, position, shade
+  collection-tiles             2–4 edge-to-edge category tiles
+  featured-collection          carousel or grid from any collection
+  campaign-banner              full-bleed photo, or photo + panel split with angled edge
+  editorial                    asymmetric two-image story
+  newsletter                   Shopify customer form
+  main-collection              banner, sticky toolbar, filter/sort drawer, grid, load more
+  main-product                 gallery, variant picker, buy box, size guide, accordions (blocks)
+  related-products             Shopify product recommendations
+  main-cart / cart-drawer      cart page and drawer (Section Rendering API)
+  predictive-search            rendered by /search/suggest
+  main-search, main-page, main-blog, main-article, main-list-collections, main-404, main-customer
+  hero-3d                      the original WebGL hero (kept, still available in the editor)
+snippets/                      product-card, price, cart-line, facets, active-filters,
+                               pagination, search-modal, icon, logo, meta-tags, theme-styles
+assets/base.css, theme.js      all styling and behaviour (no dependencies)
+tools/harness/                 local renderer + API emulator used for testing (not uploaded)
+```
 
-1. Online Store → Themes → … → **Edit code**.
-2. Upload `assets/hero-3d.js` and `assets/hero-3d.css` under **Assets**.
-3. Create `sections/hero-3d.liquid` and paste in this repo's copy.
-4. Save, then **Customize** → **Add section** → **3D hero**.
+## Preview and upload
 
-Or with the Shopify CLI, from a theme checkout:
+**Option A — Shopify CLI (recommended)**
 
 ```sh
-cp assets/hero-3d.* <theme>/assets/
-cp sections/hero-3d.liquid <theme>/sections/
-shopify theme dev
+npm i -g @shopify/cli
+shopify theme check                         # lint
+shopify theme dev --store your-store.myshopify.com   # live preview with hot reload
+shopify theme push --unpublished --store your-store.myshopify.com
 ```
 
-## Settings
-
-Heading / text / eyebrow, two buttons, a featured product (its URL and price
-feed the primary button), background / text / accent colours, height, corner
-radius, auto-rotate, and up to four badge blocks.
-
-**Custom model:** Content → Files → upload a `.glb`, copy its URL, paste it into
-*Custom .glb model URL*. Keep it under ~5 MB and Draco-compress it if you can —
-it is fetched on every page view. If it fails to load the built-in figure stays.
-
-## Cart reactions
-
-The scene pulses on `cart:updated` or `cart:refresh`, which Dawn-family themes
-dispatch. On a theme that does not, fire it yourself after an add-to-cart:
-
-```js
-document.dispatchEvent(new CustomEvent('hero3d:pulse'));
-```
-
-## Local preview
-
-Three.js is loaded as an ES module, so open `preview.html` over HTTP, not
-`file://`:
+**Option B — ZIP upload:** build `blogh-theme.zip` from the theme folders only:
 
 ```sh
-python3 -m http.server 8000   # then visit http://localhost:8000/preview.html
+zip -r blogh-theme.zip assets config layout locales sections snippets templates
 ```
+
+Then go to Online Store → Themes → Add theme → Upload zip file. Publish when ready.
+
+## Setting up the store (one time)
+
+1. **Menus** (Online Store → Navigation):
+   - `main-menu`, three levels: *Women* → *Clothing* → *Leggings*. Second-level items
+     become mega-menu columns (max 4).
+   - `footer` for the help column.
+   - Optionally a legal menu and a mobile utility menu (set in the header and footer sections).
+2. **Filters:** install *Search & Discovery*, then add Size, Colour, Availability, Price,
+   Product type. The filter drawer shows exactly what's configured there.
+3. **Colour swatches:** variant options named *Color* or *Colour* render as swatches
+   (configurable in *Theme settings → Product cards*). Swatch colour comes from Shopify's
+   option swatches if set, otherwise the variant image, otherwise the colour name.
+   Assign a variant image to each colour so the gallery and cards switch.
+4. **Badges:** tag products `new` for the NEW badge. SALE is automatic when the
+   compare-at price is higher than the price. SOLD OUT is automatic.
+5. **Size guide:** create a page with a size table and pick it in Product → Variant picker block.
+6. **Customise the homepage:** pick the hero's desktop and mobile images (set the focal
+   point in the image picker), choose collections for the tiles and product rows, and add
+   images to the campaign, editorial and mega-menu blocks. Every section can be
+   reordered, hidden or duplicated.
+
+## Photography brief
+
+All photo slots are editor settings. Until you fill them, they render a designed dark
+panel with the slash, not a broken image. For the intended look:
+- **Hero:** 2600×1500 or larger, subject in the right ⅔, clean negative space bottom-left.
+  Add a separate 1200×1800 portrait crop for mobile.
+- **Tiles:** 4:5, subject centred-high, bottom third quiet for the title.
+- **Product:** 4:5, one consistent background (light grey), front, back, detail and on-model.
+- **Campaign split:** photo at least 1600px wide, subject away from the angled edge.
+
+Use photography you own or have licensed.
+
+## Status
+
+Implemented: everything listed in the structure above. Validated with Theme Check, a
+local liquidjs harness, and 29 scripted interaction tests. See the test report for
+what was **not** verified on a real Shopify store.

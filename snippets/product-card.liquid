@@ -1,0 +1,131 @@
+{%- comment -%}
+  Product card. Uses real product data only.
+  - product: product (required)
+  - loading: 'eager' | 'lazy'
+  - sizes: image sizes attribute
+{%- endcomment -%}
+{%- liquid
+  assign sizes = sizes | default: '(min-width: 1200px) 25vw, (min-width: 750px) 33vw, 50vw'
+  assign loading = loading | default: 'lazy'
+  assign color_names = settings.color_option_names | downcase | split: ','
+  assign color_option = nil
+  assign size_option = nil
+  for option in product.options_with_values
+    assign opt_name = option.name | downcase | strip
+    if color_names contains opt_name
+      assign color_option = option
+    elsif opt_name contains 'size' or opt_name == 'größe' or opt_name == 'taille'
+      assign size_option = option
+    endif
+  endfor
+  assign color_index = 0
+  if color_option
+    assign color_index = color_option.position | minus: 1
+  endif
+  assign size_index = 0
+  if size_option
+    assign size_index = size_option.position | minus: 1
+  endif
+  assign first_variant = product.selected_or_first_available_variant
+  assign image = first_variant.featured_image | default: product.featured_media.preview_image
+  assign second = nil
+  if settings.card_secondary_image and product.media.size > 1
+    for m in product.media
+      if m.preview_image.src != image.src
+        assign second = m.preview_image
+        break
+      endif
+    endfor
+  endif
+  assign is_new = false
+  assign new_tag = settings.new_badge_tag | downcase
+  for tag in product.tags
+    assign t = tag | downcase
+    if t == new_tag
+      assign is_new = true
+    endif
+  endfor
+  assign on_sale = false
+  if product.compare_at_price > product.price
+    assign on_sale = true
+  endif
+-%}
+<article class="card" data-product-card>
+  <a href="{{ product.url }}" class="card__media" tabindex="-1" aria-hidden="true">
+    {%- if image -%}
+      {{ image | image_url: width: 900 | image_tag:
+          widths: '300, 450, 600, 750, 900',
+          sizes: sizes,
+          loading: loading,
+          class: 'card__img card__img--1',
+          alt: image.alt | default: product.title,
+          data-card-img: '' }}
+      {%- if second -%}
+        {{ second | image_url: width: 900 | image_tag: widths: '300, 450, 600, 750, 900', sizes: sizes, loading: 'lazy', class: 'card__img card__img--2', alt: '' }}
+      {%- endif -%}
+    {%- else -%}
+      {{ 'product-apparel-1' | placeholder_svg_tag: 'placeholder-svg card__img' }}
+    {%- endif -%}
+  </a>
+
+  <div class="card__badges">
+    {%- unless product.available -%}
+      <span class="badge badge--dark">{{ 'products.product.sold_out' | t }}</span>
+    {%- else -%}
+      {%- if is_new -%}<span class="badge badge--accent">{{ 'products.product.new' | t }}</span>{%- endif -%}
+      {%- if on_sale -%}<span class="badge badge--sale">{{ 'products.product.on_sale' | t }}</span>{%- endif -%}
+    {%- endunless -%}
+  </div>
+
+  {%- if size_option and product.available -%}
+    <div class="card__quick" data-quick-add>
+      {%- for variant in product.variants -%}
+        {%- if color_option == nil or variant.options[color_index] == first_variant.options[color_index] -%}
+          <button type="button" class="card__quick-size" data-variant-id="{{ variant.id }}"
+            aria-label="{{ 'products.product.add_to_cart' | t }}: {{ product.title | escape }} – {{ variant.options[size_index] | escape }}"
+            {% unless variant.available %}disabled{% endunless %}>
+            {{- variant.options[size_index] | escape -}}
+          </button>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  {%- endif -%}
+
+  <div class="card__info">
+    <h3 class="card__title"><a href="{{ product.url }}">{{ product.title | escape }}</a></h3>
+    <p class="card__meta">
+      {%- if color_option -%}
+        <span data-card-color>{{ first_variant.options[color_index] | escape }}</span>
+      {%- else -%}
+        {{ product.type | escape }}
+      {%- endif -%}
+    </p>
+    {% render 'price', product: product %}
+    {%- if settings.card_swatches and color_option and color_option.values.size > 1 -%}
+      <div class="card__swatches" aria-label="{{ 'products.product.colours' | t: count: color_option.values.size }}">
+        {%- for value in color_option.values limit: 5 -%}
+          {%- liquid
+            assign color_variant = nil
+            for v in product.variants
+              if v.options[color_index] == value
+                assign color_variant = v
+                break
+              endif
+            endfor
+          -%}
+          <a href="{{ color_variant.url | default: product.url }}"
+            class="swatch-dot{% if value == first_variant.options[color_index] %} is-active{% endif %}"
+            style="{% render 'swatch-style', value: value %}"
+            title="{{ value | escape }}"
+            {% if color_variant.featured_image %}data-swatch-img="{{ color_variant.featured_image | image_url: width: 900 }}"{% endif %}
+            data-swatch-name="{{ value | escape }}">
+            <span class="visually-hidden">{{ value | escape }}</span>
+          </a>
+        {%- endfor -%}
+        {%- if color_option.values.size > 5 -%}
+          <span class="card__swatch-more">+{{ color_option.values.size | minus: 5 }}</span>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+</article>

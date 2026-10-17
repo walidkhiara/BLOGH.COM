@@ -1,0 +1,35 @@
+{%- comment -%} Rendered by /search/suggest?section_id=predictive-search {%- endcomment -%}
+{%- if predictive_search.performed -%}
+  {%- assign res = predictive_search.resources -%}
+  {%- if res.products.size > 0 or res.queries.size > 0 or res.collections.size > 0 -%}
+    <div class="predictive__grid">
+      <div class="predictive__list" role="listbox">
+        {%- if res.queries.size > 0 or res.collections.size > 0 -%}
+          <p class="eyebrow muted">{{ 'search.suggestions' | t }}</p>
+          {%- for q in res.queries -%}
+            <a href="{{ q.url }}" role="option" aria-selected="false">{{ q.styled_text }}</a>
+          {%- endfor -%}
+          {%- for c in res.collections -%}
+            <a href="{{ c.url }}" role="option" aria-selected="false">{{ c.title | escape }}</a>
+          {%- endfor -%}
+        {%- endif -%}
+        {%- for p in res.pages -%}
+          <a href="{{ p.url }}" role="option" aria-selected="false">{{ p.title | escape }}</a>
+        {%- endfor -%}
+        <a href="{{ routes.search_url }}?q={{ predictive_search.terms | url_encode }}&options%5Bprefix%5D=last" class="link-underline" role="option" aria-selected="false" style="justify-self:start;margin-top:8px">{{ 'search.view_all' | t }}</a>
+      </div>
+      {%- if res.products.size > 0 -%}
+        <div>
+          <p class="eyebrow muted" style="margin-bottom:16px">{{ 'search.products' | t }}</p>
+          <div class="product-grid">
+            {%- for product in res.products limit: 4 -%}
+              <div role="option" aria-selected="false">{% render 'product-card', product: product, sizes: '(min-width: 750px) 22vw, 50vw' %}</div>
+            {%- endfor -%}
+          </div>
+        </div>
+      {%- endif -%}
+    </div>
+  {%- else -%}
+    <p class="muted">{{ 'search.no_results' | t: terms: predictive_search.terms }}</p>
+  {%- endif -%}
+{%- endif -%}

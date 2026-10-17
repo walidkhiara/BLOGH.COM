@@ -1,0 +1,11 @@
+{%- comment -%} Outputs a --swatch CSS value for an option value. Uses Shopify swatches when configured, otherwise the colour name. {%- endcomment -%}
+{%- liquid
+  if value.swatch.image
+    echo '--swatch: url(' | append: value.swatch.image | image_url: width: 80 | append: ')'
+  elsif value.swatch.color
+    echo '--swatch: ' | append: value.swatch.color
+  else
+    assign last_word = value | split: ' ' | last | split: '/' | last | downcase | remove: '-'
+    echo '--swatch: ' | append: last_word
+  endif
+-%}

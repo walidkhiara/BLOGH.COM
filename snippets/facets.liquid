@@ -1,0 +1,93 @@
+{%- comment -%}
+  Filter + sort drawer. Works without JS (GET form); theme.js upgrades it to
+  in-place updates via the Section Rendering API.
+  - results: collection or search
+  - sort_by / sort_options
+  - section_id
+{%- endcomment -%}
+<div class="overlay" data-overlay="facets" data-close-drawer></div>
+<aside class="drawer drawer--right" id="FacetsDrawer" role="dialog" aria-modal="true" aria-labelledby="FacetsTitle" data-drawer="facets" tabindex="-1">
+  <form class="facets" data-facets-form action="{{ url | split: '?' | first }}" method="get" style="display:flex;flex-direction:column;height:100%">
+    {%- if results.terms -%}
+      <input type="hidden" name="q" value="{{ results.terms | escape }}">
+      <input type="hidden" name="options[prefix]" value="last">
+    {%- endif -%}
+    <div class="drawer__head">
+      <h2 class="h-md" id="FacetsTitle">{{ 'collections.filter_and_sort' | t }}</h2>
+      <button type="button" class="icon-btn" data-close-drawer aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+    </div>
+    <div class="drawer__body">
+      <div class="facets__sort">
+        <label class="eyebrow" for="SortBy-drawer" style="display:block;margin-bottom:10px">{{ 'collections.sort_by' | t }}</label>
+        <div class="select-wrap">
+          <select name="sort_by" id="SortBy-drawer" style="width:100%">
+            {%- for option in sort_options -%}
+              <option value="{{ option.value | escape }}" {% if option.value == sort_by %}selected{% endif %}>{{ option.name | escape }}</option>
+            {%- endfor -%}
+          </select>
+          {% render 'icon', name: 'chevron' %}
+        </div>
+      </div>
+      {%- for filter in results.filters -%}
+        {%- liquid
+          assign label_down = filter.label | downcase
+          assign is_size = false
+          if label_down contains 'size' or label_down contains 'größe' or label_down contains 'taille'
+            assign is_size = true
+          endif
+          assign open = false
+          if filter.active_values.size > 0 or forloop.index <= 2
+            assign open = true
+          endif
+          if filter.type == 'price_range'
+            if filter.min_value.value != nil or filter.max_value.value != nil
+              assign open = true
+            endif
+          endif
+        -%}
+        <details class="facets__group" {% if open %}open{% endif %}>
+          <summary>
+            <span>{{ filter.label | escape }}{% if filter.active_values.size > 0 %} ({{ filter.active_values.size }}){% endif %}</span>
+            {% render 'icon', name: 'plus' %}
+          </summary>
+          {%- case filter.type -%}
+            {%- when 'price_range' -%}
+              <div class="price-range">
+                <label>{{ 'collections.price_from' | t }} ({{ cart.currency.symbol }})
+                  <input class="input" type="number" inputmode="decimal" min="0" max="{{ filter.range_max | divided_by: 100.0 | ceil }}"
+                    name="{{ filter.min_value.param_name }}" value="{% if filter.min_value.value != nil %}{{ filter.min_value.value | divided_by: 100.0 }}{% endif %}" placeholder="0">
+                </label>
+                <label>{{ 'collections.price_to' | t }} ({{ cart.currency.symbol }})
+                  <input class="input" type="number" inputmode="decimal" min="0" max="{{ filter.range_max | divided_by: 100.0 | ceil }}"
+                    name="{{ filter.max_value.param_name }}" value="{% if filter.max_value.value != nil %}{{ filter.max_value.value | divided_by: 100.0 }}{% endif %}" placeholder="{{ filter.range_max | divided_by: 100.0 | ceil }}">
+                </label>
+              </div>
+            {%- else -%}
+              <div class="facets__list{% if is_size %} facets__list--grid{% endif %}">
+                {%- for value in filter.values -%}
+                  {%- assign disabled = false -%}
+                  {%- if value.count == 0 and value.active == false -%}{%- assign disabled = true -%}{%- endif -%}
+                  {%- if is_size -%}
+                    <label class="size-chip">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}" {% if value.active %}checked{% endif %} {% if disabled %}disabled{% endif %}>
+                      <span>{{ value.label | escape }}</span>
+                    </label>
+                  {%- else -%}
+                    <label class="check">
+                      <input type="checkbox" name="{{ value.param_name }}" value="{{ value.value }}" {% if value.active %}checked{% endif %} {% if disabled %}disabled{% endif %}>
+                      <span>{{ value.label | escape }}</span>
+                      <span class="check__count">{{ value.count }}</span>
+                    </label>
+                  {%- endif -%}
+                {%- endfor -%}
+              </div>
+          {%- endcase -%}
+        </details>
+      {%- endfor -%}
+    </div>
+    <div class="drawer__foot facets__foot">
+      <a href="{{ results.url | default: url | split: '?' | first }}{% if results.terms %}?q={{ results.terms | url_encode }}{% endif %}" class="btn btn--outline" data-facet-link>{{ 'collections.clear_all' | t }}</a>
+      <button type="submit" class="btn" data-close-drawer>{{ 'collections.apply' | t }}</button>
+    </div>
+  </form>
+</aside>

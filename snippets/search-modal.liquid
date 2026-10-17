@@ -1,0 +1,16 @@
+<div class="search-modal" id="SearchModal" data-search-modal role="dialog" aria-modal="true" aria-label="{{ 'search.title' | t }}">
+  <div class="search-modal__backdrop" data-close-search></div>
+  <div class="search-modal__panel">
+    <div class="page-width">
+      <form action="{{ routes.search_url }}" method="get" role="search" class="search-form">
+        {% render 'icon', name: 'search' %}
+        <label for="SearchInput" class="visually-hidden">{{ 'search.title' | t }}</label>
+        <input type="search" id="SearchInput" name="q" placeholder="{{ 'header.search_placeholder' | t }}" autocomplete="off"
+          role="combobox" aria-expanded="false" aria-controls="PredictiveResults" aria-autocomplete="list" data-search-input>
+        <input type="hidden" name="options[prefix]" value="last">
+        <button type="button" class="icon-btn" data-close-search aria-label="{{ 'general.close' | t }}">{% render 'icon', name: 'close' %}</button>
+      </form>
+      <div id="PredictiveResults" class="predictive" data-predictive aria-live="polite"></div>
+    </div>
+  </div>
+</div>

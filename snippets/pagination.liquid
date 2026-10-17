@@ -1,0 +1,28 @@
+{%- comment -%} - paginate: paginate object {%- endcomment -%}
+{%- if paginate.pages > 1 -%}
+  {%- liquid
+    assign shown = paginate.current_offset | plus: paginate.page_size
+    if shown > paginate.items
+      assign shown = paginate.items
+    endif
+    assign pct = shown | times: 100.0 | divided_by: paginate.items
+  -%}
+  <nav class="pagination" aria-label="Pagination">
+    <span>{{ 'collections.showing' | t: shown: shown, total: paginate.items }}</span>
+    <div class="pagination__bar" aria-hidden="true"><span style="width: {{ pct }}%"></span></div>
+    {%- if paginate.next -%}
+      <a href="{{ paginate.next.url }}" class="btn btn--outline" data-load-more>{{ 'collections.load_more' | t }}</a>
+    {%- endif -%}
+    <div class="pagination__pages" data-pagination-pages>
+      {%- for part in paginate.parts -%}
+        {%- if part.is_link -%}
+          <a href="{{ part.url }}" data-facet-link>{{ part.title }}</a>
+        {%- elsif part.title == paginate.current_page -%}
+          <span class="is-current" aria-current="page">{{ part.title }}</span>
+        {%- else -%}
+          <span>{{ part.title }}</span>
+        {%- endif -%}
+      {%- endfor -%}
+    </div>
+  </nav>
+{%- endif -%}

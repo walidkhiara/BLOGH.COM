@@ -1,0 +1,19 @@
+<div class="page-width title-block"><h1 class="h-xl">{{ section.settings.heading | escape }}</h1></div>
+<div class="page-width" style="padding-bottom:96px">
+  <div class="tiles" style="--cols: 3;">
+    {%- for collection in collections -%}
+      <a href="{{ collection.url }}" class="tile">
+        <div class="media media--ratio">
+          {%- if collection.featured_image -%}
+            {{ collection.featured_image | image_url: width: 1200 | image_tag: widths: '400, 800, 1200', sizes: '(min-width: 750px) 33vw, 100vw', loading: 'lazy', alt: collection.title }}
+          {%- else -%}<div class="media__fallback"><span>{{ collection.title | escape }}</span></div>{%- endif -%}
+        </div>
+        <div class="tile__scrim" aria-hidden="true"></div>
+        <div class="tile__body"><h2 class="h-lg">{{ collection.title | escape }}</h2><span class="tile__cta">{{ collection.products_count }} products</span></div>
+      </a>
+    {%- endfor -%}
+  </div>
+</div>
+{% schema %}
+{ "name": "Collections list", "settings": [ { "type": "text", "id": "heading", "label": "Heading", "default": "Shop all" } ] }
+{% endschema %}

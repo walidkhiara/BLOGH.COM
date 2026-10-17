@@ -1,0 +1,34 @@
+{%- liquid
+  assign heading_base = settings.type_heading_font
+  assign heading_font = heading_base | font_modify: 'weight', settings.heading_weight
+  if heading_font == nil
+    assign heading_font = heading_base
+  endif
+  assign body_font = settings.type_body_font
+  assign body_bold = body_font | font_modify: 'weight', 'bold'
+-%}
+{% style %}
+  {{ heading_font | font_face: font_display: 'swap' }}
+  {{ body_font | font_face: font_display: 'swap' }}
+  {{ body_bold | font_face: font_display: 'swap' }}
+
+  :root {
+    --font-heading: {{ heading_font.family }}, {{ heading_font.fallback_families }};
+    --font-heading-weight: {{ settings.heading_weight }};
+    --font-body: {{ body_font.family }}, {{ body_font.fallback_families }};
+    --font-body-weight: {{ body_font.weight }};
+    --font-body-bold: {{ body_bold.weight | default: 700 }};
+
+    --color-bg: {{ settings.color_background }};
+    --color-text: {{ settings.color_text }};
+    --color-surface: {{ settings.color_surface }};
+    --color-muted: {{ settings.color_muted }};
+    --color-border: {{ settings.color_border }};
+    --color-accent: {{ settings.color_accent }};
+    --color-accent-text: {{ settings.color_accent_text }};
+    --color-sale: {{ settings.color_sale }};
+
+    --page-width: {{ settings.page_width }}px;
+    --gutter: clamp(16px, 2.6vw, 40px);
+  }
+{% endstyle %}

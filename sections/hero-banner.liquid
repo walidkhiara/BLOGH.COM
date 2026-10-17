@@ -1,0 +1,71 @@
+{%- liquid
+  assign s = section.settings
+  assign desktop = s.image
+  assign mobile = s.image_mobile | default: s.image
+  assign focal = desktop.presentation.focal_point | default: '50% 50%'
+  assign focal_m = mobile.presentation.focal_point | default: focal
+-%}
+<section class="hero hero--{{ s.position }}{% unless desktop %} hero--fallback{% endunless %}" data-hero
+  style="--hero-h: {{ s.height }}svh; --hero-h-mobile: {{ s.height_mobile }}svh; --scrim: {{ s.overlay | divided_by: 100.0 }}; --focal: {{ focal_m }}; --focal-desktop: {{ focal }}; --hero-fg: {{ s.text_color }};{% if s.position == 'middle-left' %} --scrim-dir: 90deg;{% endif %}"
+  aria-label="{{ s.heading | strip_html | escape }}">
+  {%- if desktop -%}
+    {%- if s.image_mobile -%}
+      <div class="hero__media hero__media--mobile">
+        {{ mobile | image_url: width: 1200 | image_tag: widths: '600, 800, 1000, 1200', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: mobile.alt | default: '' }}
+      </div>
+    {%- endif -%}
+    <div class="hero__media hero__media--desktop">
+      {{ desktop | image_url: width: 3000 | image_tag: widths: '750, 1100, 1500, 2000, 2600, 3000', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: desktop.alt | default: '' }}
+    </div>
+    {%- if s.overlay > 0 -%}<div class="hero__scrim" aria-hidden="true"></div>{%- endif -%}
+  {%- else -%}
+    <div class="hero__fallback-art" aria-hidden="true"></div>
+    <div class="hero__fallback-word" aria-hidden="true">{{ shop.name | escape }}</div>
+  {%- endif -%}
+
+  <div class="hero__content">
+    {%- if s.eyebrow != blank -%}<p class="eyebrow"><span class="slash" aria-hidden="true"></span>{{ s.eyebrow | escape }}</p>{%- endif -%}
+    {%- if s.heading != blank -%}<h1 class="hero__heading h-display">{{ s.heading | escape | newline_to_br }}</h1>{%- endif -%}
+    {%- if s.text != blank -%}<div class="hero__text">{{ s.text }}</div>{%- endif -%}
+    {%- if s.button_label != blank or s.button_label_2 != blank -%}
+      <div class="hero__actions">
+        {%- if s.button_label != blank -%}
+          <a href="{{ s.button_link | default: routes.all_products_collection_url }}" class="btn btn--light">{{ s.button_label | escape }} {% render 'icon', name: 'arrow' %}</a>
+        {%- endif -%}
+        {%- if s.button_label_2 != blank -%}
+          <a href="{{ s.button_link_2 | default: routes.all_products_collection_url }}" class="btn btn--outline-light">{{ s.button_label_2 | escape }}</a>
+        {%- endif -%}
+      </div>
+    {%- endif -%}
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Campaign hero",
+  "tag": "div",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Desktop image", "info": "2600×1500px or larger. Set the focal point in the image picker." },
+    { "type": "image_picker", "id": "image_mobile", "label": "Mobile image", "info": "Portrait crop, 1200×1800px. Falls back to the desktop image." },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "New season" },
+    { "type": "textarea", "id": "heading", "label": "Heading", "default": "Built for the\nhard sets" },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Second-skin compression and sweat-mapped mesh, cut for lifting, running and everything between.</p>" },
+    { "type": "text", "id": "button_label", "label": "Primary button", "default": "Shop women" },
+    { "type": "url", "id": "button_link", "label": "Primary link" },
+    { "type": "text", "id": "button_label_2", "label": "Secondary button", "default": "Shop men" },
+    { "type": "url", "id": "button_link_2", "label": "Secondary link" },
+    { "type": "select", "id": "position", "label": "Content position", "default": "bottom-left",
+      "options": [
+        { "value": "bottom-left", "label": "Bottom left" },
+        { "value": "middle-left", "label": "Middle left" },
+        { "value": "bottom-center", "label": "Bottom center" },
+        { "value": "bottom-right", "label": "Bottom right" }
+      ] },
+    { "type": "color", "id": "text_color", "label": "Text colour", "default": "#ffffff" },
+    { "type": "range", "id": "overlay", "label": "Bottom shade", "min": 0, "max": 80, "step": 5, "unit": "%", "default": 40, "info": "A gradient behind the text only. Use 0 if the photo already has contrast." },
+    { "type": "range", "id": "height", "label": "Desktop height", "min": 50, "max": 100, "step": 2, "unit": "vh", "default": 92 },
+    { "type": "range", "id": "height_mobile", "label": "Mobile height", "min": 50, "max": 100, "step": 2, "unit": "vh", "default": 86 }
+  ],
+  "presets": [ { "name": "Campaign hero" } ]
+}
+{% endschema %}

@@ -1,0 +1,130 @@
+{
+  "general": {
+    "page": "Page {{ page }}",
+    "close": "Close",
+    "menu": "Menu",
+    "previous": "Previous",
+    "next": "Next",
+    "view_all": "View all",
+    "home": "Home",
+    "social": "Follow us on {{ name }}"
+  },
+  "accessibility": {
+    "skip_to_content": "Skip to content",
+    "search": "Search",
+    "account": "Account",
+    "cart": "Bag",
+    "cart_count": {
+      "one": "{{ count }} item",
+      "other": "{{ count }} items"
+    },
+    "slide_prev": "Previous products",
+    "slide_next": "Next products",
+    "image": "Image {{ index }}"
+  },
+  "header": {
+    "search_placeholder": "What are you looking for?"
+  },
+  "products": {
+    "product": {
+      "add_to_cart": "Add to bag",
+      "sold_out": "Sold out",
+      "unavailable": "Unavailable",
+      "on_sale": "Sale",
+      "new": "New",
+      "quantity": "Quantity",
+      "increase": "Increase quantity",
+      "decrease": "Decrease quantity",
+      "size_guide": "Size guide",
+      "select": "Select {{ option }}",
+      "colours": {
+        "one": "{{ count }} colour",
+        "other": "{{ count }} colours"
+      },
+      "from": "From {{ price }}",
+      "regular_price": "Regular price",
+      "sale_price": "Sale price",
+      "save": "Save {{ amount }}",
+      "description": "Description",
+      "tax_included": "Tax included. Shipping calculated at checkout.",
+      "in_stock": "In stock",
+      "low_stock": "Only {{ count }} left",
+      "view": "View product"
+    }
+  },
+  "collections": {
+    "filter": "Filter",
+    "filter_and_sort": "Filter & sort",
+    "sort_by": "Sort by",
+    "clear_all": "Clear all",
+    "apply": "Show results",
+    "remove_filter": "Remove filter {{ filter }}",
+    "products_count": {
+      "one": "{{ count }} product",
+      "other": "{{ count }} products"
+    },
+    "empty": "No products match these filters.",
+    "price_from": "From",
+    "price_to": "To",
+    "load_more": "Load more",
+    "showing": "Showing {{ shown }} of {{ total }}"
+  },
+  "cart": {
+    "title": "Your bag",
+    "empty": "Your bag is empty",
+    "empty_cta": "Shop new arrivals",
+    "subtotal": "Subtotal",
+    "checkout": "Checkout",
+    "view_cart": "View bag",
+    "remove": "Remove {{ title }}",
+    "remove_label": "Remove",
+    "taxes": "Taxes and shipping calculated at checkout.",
+    "error": "Something went wrong. Please try again.",
+    "free_shipping_remaining": "You're {{ amount }} away from free delivery",
+    "free_shipping_reached": "You've unlocked free delivery",
+    "note": "Order note",
+    "update": "Update"
+  },
+  "search": {
+    "title": "Search",
+    "results_for": "{{ count }} results for “{{ terms }}”",
+    "no_results": "No results for “{{ terms }}”. Check the spelling or try a broader term.",
+    "products": "Products",
+    "suggestions": "Suggestions",
+    "pages": "Pages",
+    "view_all": "View all results",
+    "submit": "Search"
+  },
+  "newsletter": {
+    "email": "Email address",
+    "submit": "Sign up",
+    "success": "You're in. Check your inbox."
+  },
+  "customer": {
+    "login": "Log in",
+    "logout": "Log out",
+    "register": "Create account",
+    "email": "Email",
+    "password": "Password",
+    "first_name": "First name",
+    "last_name": "Last name",
+    "forgot": "Forgot your password?",
+    "reset": "Reset password",
+    "orders": "Order history",
+    "no_orders": "You haven't placed any orders yet.",
+    "order": "Order",
+    "date": "Date",
+    "total": "Total",
+    "status": "Status",
+    "addresses": "Addresses",
+    "account": "My account"
+  },
+  "404": {
+    "title": "Page not found",
+    "text": "The page you're looking for has moved or no longer exists."
+  },
+  "password": {
+    "enter": "Enter store using password",
+    "submit": "Enter"
+  }
+}

@@ -1,0 +1,55 @@
+{%- liquid
+  assign s = section.settings
+  assign focal = s.image.presentation.focal_point | default: '50% 50%'
+-%}
+<section class="section" style="--section-pt: {{ section.settings.padding_top | default: 0 }}px; --section-pb: {{ section.settings.padding_bottom | default: 0 }}px;">
+  <div class="banner banner--{{ s.layout }} banner--{{ s.align }}{% if s.angled %} banner--angled{% endif %}"
+    style="--banner-h: {{ s.height }}svh; --scrim: {{ s.overlay | divided_by: 100.0 }}; --focal: {{ focal }}; --banner-bg: {{ s.panel_color }}; --banner-fg: {{ s.text_color }};">
+    <div class="banner__media">
+      {%- if s.image -%}
+        {{ s.image | image_url: width: 2600 | image_tag: widths: '750, 1100, 1500, 2000, 2600', sizes: '100vw', loading: 'lazy', alt: s.image.alt | default: '' }}
+      {%- else -%}
+        <div class="media__fallback"><span>{{ s.heading | escape }}</span></div>
+      {%- endif -%}
+    </div>
+    {%- if s.layout == 'full' and s.overlay > 0 -%}<div class="banner__scrim" aria-hidden="true"></div>{%- endif -%}
+    <div class="banner__content">
+      {%- if s.layout == 'split' and s.index != blank -%}<span class="banner__index" data-reveal aria-hidden="true">{{ s.index | escape }}</span>{%- endif -%}
+      <div style="display:grid;gap:24px;justify-items:inherit">
+        {%- if s.eyebrow != blank -%}<p class="eyebrow" data-reveal><span class="slash" aria-hidden="true"></span>{{ s.eyebrow | escape }}</p>{%- endif -%}
+        <h2 class="banner__heading h-xl" data-reveal style="--reveal-i:1">{{ s.heading | escape | newline_to_br }}</h2>
+        {%- if s.text != blank -%}<div class="lede" data-reveal style="--reveal-i:2">{{ s.text }}</div>{%- endif -%}
+        {%- if s.button_label != blank -%}
+          <div data-reveal style="--reveal-i:3"><a href="{{ s.button_link | default: routes.all_products_collection_url }}" class="btn {% if s.button_style == 'accent' %}btn--accent{% else %}btn--light{% endif %}">{{ s.button_label | escape }} {% render 'icon', name: 'arrow' %}</a></div>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+<style>.banner__content > div { justify-items: start; } .banner--right .banner__content > div { justify-items: end; }</style>
+
+{% schema %}
+{
+  "name": "Campaign banner",
+  "settings": [
+    { "type": "select", "id": "layout", "label": "Layout", "default": "full", "options": [ { "value": "full", "label": "Full-bleed photo" }, { "value": "split", "label": "Photo + colour panel" } ] },
+    { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "text", "id": "index", "label": "Large number (split layout)", "default": "01" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Training" },
+    { "type": "textarea", "id": "heading", "label": "Heading", "default": "Lift heavier.\nRecover faster." },
+    { "type": "richtext", "id": "text", "label": "Text" },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "Shop training" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "select", "id": "button_style", "label": "Button style", "default": "light", "options": [ { "value": "light", "label": "White" }, { "value": "accent", "label": "Accent" } ] },
+    { "type": "select", "id": "align", "label": "Text side", "default": "left", "options": [ { "value": "left", "label": "Left" }, { "value": "right", "label": "Right" } ] },
+    { "type": "checkbox", "id": "angled", "label": "Angled photo edge (split layout)", "default": true },
+    { "type": "color", "id": "panel_color", "label": "Panel colour (split layout)", "default": "#0b0b0c" },
+    { "type": "color", "id": "text_color", "label": "Text colour", "default": "#ffffff" },
+    { "type": "range", "id": "overlay", "label": "Side shade (full layout)", "min": 0, "max": 80, "step": 5, "unit": "%", "default": 40 },
+    { "type": "range", "id": "height", "label": "Height", "min": 40, "max": 100, "step": 2, "unit": "vh", "default": 76 },
+    { "type": "range", "id": "padding_top", "label": "Top spacing", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 },
+    { "type": "range", "id": "padding_bottom", "label": "Bottom spacing", "min": 0, "max": 120, "step": 4, "unit": "px", "default": 0 }
+  ],
+  "presets": [ { "name": "Campaign banner" } ]
+}
+{% endschema %}

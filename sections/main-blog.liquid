@@ -1,0 +1,22 @@
+<div class="page-width title-block"><h1 class="h-xl">{{ blog.title | escape }}</h1></div>
+<div class="page-width" style="padding-bottom:96px">
+  {%- paginate blog.articles by 12 -%}
+    <ul class="product-grid" role="list" style="--cols-desktop:3">
+      {%- for article in blog.articles -%}
+        <li>
+          <a href="{{ article.url }}" class="article-card">
+            <div class="media media--ratio">
+              {%- if article.image -%}{{ article.image | image_url: width: 1000 | image_tag: widths: '400, 700, 1000', sizes: '(min-width: 750px) 33vw, 50vw', loading: 'lazy', alt: article.image.alt | default: article.title }}{%- else -%}<div class="media__fallback"><span>{{ article.title | escape }}</span></div>{%- endif -%}
+            </div>
+            <span class="eyebrow muted">{{ article.published_at | date: '%d %b %Y' }}</span>
+            <h2 class="h-md">{{ article.title | escape }}</h2>
+          </a>
+        </li>
+      {%- endfor -%}
+    </ul>
+    {% render 'pagination', paginate: paginate %}
+  {%- endpaginate -%}
+</div>
+{% schema %}
+{ "name": "Blog posts", "settings": [] }
+{% endschema %}

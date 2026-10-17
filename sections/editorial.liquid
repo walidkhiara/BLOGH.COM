@@ -1,0 +1,52 @@
+{%- assign s = section.settings -%}
+<section class="section" style="--section-pt: {{ section.settings.padding_top | default: 0 }}px; --section-pb: {{ section.settings.padding_bottom | default: 0 }}px;">
+  <div class="page-width">
+    <div class="editorial{% if s.reverse %} editorial--reverse{% endif %}">
+      <div class="editorial__lead" data-reveal>
+        <div class="media media--ratio">
+          {%- if s.image -%}
+            {{ s.image | image_url: width: 1800 | image_tag: widths: '600, 900, 1200, 1800', sizes: '(min-width: 990px) 55vw, 100vw', loading: 'lazy', alt: s.image.alt | default: '' }}
+          {%- else -%}
+            <div class="media__fallback"><span>{{ s.heading | escape }}</span></div>
+          {%- endif -%}
+        </div>
+      </div>
+      <div class="editorial__side">
+        <div class="editorial__text">
+          {%- if s.eyebrow != blank -%}<p class="eyebrow muted" data-reveal>{{ s.eyebrow | escape }}</p>{%- endif -%}
+          <h2 class="h-xl" data-reveal style="--reveal-i:1">{{ s.heading | escape | newline_to_br }}</h2>
+          {%- if s.text != blank -%}<div class="lede rte" data-reveal style="--reveal-i:2">{{ s.text }}</div>{%- endif -%}
+          {%- if s.button_label != blank -%}
+            <a href="{{ s.button_link | default: routes.all_products_collection_url }}" class="btn" data-reveal style="--reveal-i:3">{{ s.button_label | escape }} {% render 'icon', name: 'arrow' %}</a>
+          {%- endif -%}
+        </div>
+        {%- if s.image_2 -%}
+          <div class="editorial__second" data-reveal style="--reveal-i:2">
+            <div class="media media--ratio">
+              {{ s.image_2 | image_url: width: 1200 | image_tag: widths: '400, 800, 1200', sizes: '(min-width: 990px) 35vw, 100vw', loading: 'lazy', alt: s.image_2.alt | default: '' }}
+            </div>
+          </div>
+        {%- endif -%}
+      </div>
+    </div>
+  </div>
+</section>
+
+{% schema %}
+{
+  "name": "Editorial story",
+  "settings": [
+    { "type": "image_picker", "id": "image", "label": "Lead image (portrait)" },
+    { "type": "image_picker", "id": "image_2", "label": "Second image (landscape, optional)" },
+    { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "The lab" },
+    { "type": "textarea", "id": "heading", "label": "Heading", "default": "Tested in\n400 sessions" },
+    { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Every seam is placed where it won't rub, every panel where you actually sweat. Prototypes go through months of real training before a single piece ships.</p>" },
+    { "type": "text", "id": "button_label", "label": "Button", "default": "How we build" },
+    { "type": "url", "id": "button_link", "label": "Button link" },
+    { "type": "checkbox", "id": "reverse", "label": "Image on the right", "default": false },
+    { "type": "range", "id": "padding_top", "label": "Top spacing", "min": 0, "max": 160, "step": 4, "unit": "px", "default": 96 },
+    { "type": "range", "id": "padding_bottom", "label": "Bottom spacing", "min": 0, "max": 160, "step": 4, "unit": "px", "default": 96 }
+  ],
+  "presets": [ { "name": "Editorial story" } ]
+}
+{% endschema %}

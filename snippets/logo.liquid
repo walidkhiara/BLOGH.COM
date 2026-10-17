@@ -1,0 +1,9 @@
+{%- comment -%}
+  Original BLOGH wordmark: condensed caps with the brand slash.
+  Pass `fill` for colour, `class` for sizing.
+{%- endcomment -%}
+<svg class="{{ class }}" viewBox="0 0 236 48" role="img" aria-label="{{ shop.name | escape }}" xmlns="http://www.w3.org/2000/svg">
+  <polygon points="10,0 26,0 16,48 0,48" fill="var(--color-accent)"/>
+  <text x="34" y="41" textLength="200" lengthAdjust="spacingAndGlyphs" fill="{{ fill | default: 'currentColor' }}"
+    style="font-family: var(--font-heading); font-weight: 900; font-size: 50px; letter-spacing: -2px;">BLOGH</text>
+</svg>

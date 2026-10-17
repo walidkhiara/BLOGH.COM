@@ -1,0 +1,25 @@
+{
+  "type": "footer",
+  "name": "Footer group",
+  "sections": {
+    "newsletter": {
+      "type": "newsletter",
+      "settings": {
+        "eyebrow": "Members first",
+        "heading": "Early access. Every drop.",
+        "text": "<p>Sign up for launch alerts, training guides and members-only pricing. No spam, unsubscribe anytime.</p>",
+        "style": "dark"
+      }
+    },
+    "footer": {
+      "type": "footer",
+      "blocks": {
+        "c1": { "type": "menu", "settings": { "title": "Shop", "menu": "main-menu" } },
+        "c2": { "type": "menu", "settings": { "title": "Help", "menu": "footer" } }
+      },
+      "block_order": ["c1", "c2"],
+      "settings": {}
+    }
+  },
+  "order": ["newsletter", "footer"]
+}

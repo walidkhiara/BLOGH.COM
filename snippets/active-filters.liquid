@@ -1,0 +1,30 @@
+{%- liquid
+  assign has_active = false
+  for filter in results.filters
+    if filter.active_values.size > 0
+      assign has_active = true
+    endif
+    if filter.type == 'price_range'
+      if filter.min_value.value != nil or filter.max_value.value != nil
+        assign has_active = true
+      endif
+    endif
+  endfor
+-%}
+{%- if has_active -%}
+  <div class="active-filters">
+    {%- for filter in results.filters -%}
+      {%- for value in filter.active_values -%}
+        <a href="{{ value.url_to_remove }}" class="chip" data-facet-link aria-label="{{ 'collections.remove_filter' | t: filter: value.label | escape }}">{{ value.label | escape }} {% render 'icon', name: 'close' %}</a>
+      {%- endfor -%}
+      {%- if filter.type == 'price_range' -%}
+        {%- if filter.min_value.value != nil or filter.max_value.value != nil -%}
+          <a href="{{ filter.url_to_remove }}" class="chip" data-facet-link>
+            {{ filter.min_value.value | default: 0 | money }}–{{ filter.max_value.value | default: filter.range_max | money }} {% render 'icon', name: 'close' %}
+          </a>
+        {%- endif -%}
+      {%- endif -%}
+    {%- endfor -%}
+    <a href="{{ results.url | default: url | split: '?' | first }}{% if results.terms %}?q={{ results.terms | url_encode }}{% endif %}" class="chip chip--clear" data-facet-link>{{ 'collections.clear_all' | t }}</a>
+  </div>
+{%- endif -%}

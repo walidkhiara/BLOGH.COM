@@ -1,0 +1,14 @@
+<article>
+  {%- if article.image -%}
+    <div class="media" style="height:70svh">{{ article.image | image_url: width: 2400 | image_tag: widths: '750, 1200, 1800, 2400', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: article.image.alt | default: article.title }}</div>
+  {%- endif -%}
+  <div class="page-content">
+    <p class="eyebrow muted">{{ article.published_at | date: '%d %B %Y' }}{% if article.author %} · {{ article.author | escape }}{% endif %}</p>
+    <h1 class="h-xl">{{ article.title | escape }}</h1>
+    <div class="rte">{{ article.content }}</div>
+    <a href="{{ blog.url }}" class="link-underline" style="justify-self:start">{{ blog.title | escape }}</a>
+  </div>
+</article>
+{% schema %}
+{ "name": "Article", "settings": [] }
+{% endschema %}

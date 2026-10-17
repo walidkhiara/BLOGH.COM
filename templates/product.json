@@ -1,0 +1,20 @@
+{
+  "sections": {
+    "main": {
+      "type": "main-product",
+      "blocks": {
+        "title": { "type": "title" },
+        "picker": { "type": "variant_picker" },
+        "buy": { "type": "buy_buttons", "settings": { "show_quantity": true, "low_stock": 5 } },
+        "usp": { "type": "usp" },
+        "desc": { "type": "description", "settings": { "open": true } },
+        "delivery": { "type": "accordion", "settings": { "heading": "Delivery & returns", "content": "<p>Standard delivery 2–4 working days, free over €75. Express next working day when ordered before 2pm. Returns are free within 30 days of delivery.</p>" } },
+        "care": { "type": "accordion", "settings": { "heading": "Fabric & care", "content": "<p>Machine wash cold, inside out. Do not tumble dry or iron the print. See the product description for composition.</p>" } }
+      },
+      "block_order": ["title", "picker", "buy", "usp", "desc", "delivery", "care"],
+      "settings": {}
+    },
+    "related": { "type": "related-products", "settings": {} }
+  },
+  "order": ["main", "related"]
+}

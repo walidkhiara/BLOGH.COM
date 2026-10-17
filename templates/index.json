@@ -1,0 +1,97 @@
+{
+  "sections": {
+    "hero": {
+      "type": "hero-banner",
+      "settings": {
+        "eyebrow": "SS26 / Velocity",
+        "heading": "Built for the\nhard sets",
+        "text": "<p>Second-skin compression and sweat-mapped mesh, cut for lifting, running and everything in between.</p>",
+        "button_label": "Shop women",
+        "button_label_2": "Shop men",
+        "position": "bottom-left",
+        "text_color": "#ffffff",
+        "overlay": 40,
+        "height": 92,
+        "height_mobile": 86
+      }
+    },
+    "tiles": {
+      "type": "collection-tiles",
+      "blocks": {
+        "t1": { "type": "tile", "settings": { "eyebrow": "Women", "title": "Train in it", "cta": "Shop women" } },
+        "t2": { "type": "tile", "settings": { "eyebrow": "Men", "title": "Lift in it", "cta": "Shop men" } }
+      },
+      "block_order": ["t1", "t2"],
+      "settings": { "edge": true, "ratio": "portrait", "padding_top": 4, "padding_bottom": 0 }
+    },
+    "new_arrivals": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Just landed",
+        "heading": "New arrivals",
+        "limit": 12,
+        "layout": "carousel",
+        "columns": 4,
+        "show_view_all": true,
+        "padding_top": 72,
+        "padding_bottom": 72
+      }
+    },
+    "campaign_split": {
+      "type": "campaign-banner",
+      "settings": {
+        "layout": "split",
+        "index": "01",
+        "eyebrow": "Seamless",
+        "heading": "Zero seams.\nZero limits.",
+        "text": "<p>Knitted in one piece so nothing digs, shifts or rides up mid-set.</p>",
+        "button_label": "Shop seamless",
+        "button_style": "accent",
+        "align": "left",
+        "angled": true,
+        "panel_color": "#0b0b0c",
+        "text_color": "#ffffff",
+        "height": 76
+      }
+    },
+    "bestsellers": {
+      "type": "featured-collection",
+      "settings": {
+        "eyebrow": "Most worn",
+        "heading": "Best sellers",
+        "limit": 8,
+        "layout": "grid",
+        "columns": 4,
+        "show_view_all": true,
+        "padding_top": 72,
+        "padding_bottom": 72
+      }
+    },
+    "campaign_full": {
+      "type": "campaign-banner",
+      "settings": {
+        "layout": "full",
+        "eyebrow": "Run club",
+        "heading": "Every kilometre\ncounts",
+        "button_label": "Shop running",
+        "button_style": "light",
+        "align": "right",
+        "text_color": "#ffffff",
+        "overlay": 45,
+        "height": 80
+      }
+    },
+    "editorial": {
+      "type": "editorial",
+      "settings": {
+        "eyebrow": "The lab",
+        "heading": "Tested in\n400 sessions",
+        "button_label": "How we build",
+        "reverse": false,
+        "padding_top": 96,
+        "padding_bottom": 96
+      }
+    }
+  },
+  "order": ["hero", "tiles", "new_arrivals", "campaign_split", "bestsellers", "campaign_full", "editorial"]
+}

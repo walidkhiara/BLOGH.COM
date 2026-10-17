@@ -1,0 +1,13 @@
+{
+  "name": "blogh-theme-harness",
+  "private": true,
+  "type": "module",
+  "description": "Local Liquid renderer + Shopify AJAX API emulator for screenshots and interaction tests. Not Shopify.",
+  "scripts": {
+    "images": "python3 make-images.py img",
+    "start": "node server.mjs ../.. 9292",
+    "shots": "node shoot.mjs shots \"home|/|d\" \"home|/|m\" \"coll|/collections/womens|d\" \"pdp|/products/apex-training-tee|d\"",
+    "test": "node interact.mjs shots"
+  },
+  "dependencies": { "liquidjs": "^10", "playwright": "1.56.1", "@fontsource/archivo": "^5" }
+}

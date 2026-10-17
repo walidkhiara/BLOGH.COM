@@ -1,0 +1,44 @@
+<div class="page-width" data-cart-page data-section-id="{{ section.id }}">
+  <div class="title-block" style="padding-bottom:0">
+    <h1 class="h-xl">{{ 'cart.title' | t }}</h1>
+  </div>
+  {%- if cart.item_count > 0 -%}
+    <form action="{{ routes.cart_url }}" method="post" id="CartForm" class="cart-page">
+      <div>
+        <div class="cart-items" data-cart-items style="border-top:1px solid var(--color-border)">
+          {%- for item in cart.items -%}{% render 'cart-line', item: item, index: forloop.index %}{%- endfor -%}
+        </div>
+        <noscript><button type="submit" name="update" class="btn btn--outline" style="margin-top:16px">{{ 'cart.update' | t }}</button></noscript>
+      </div>
+      <aside class="cart-page__aside">
+        {%- if section.settings.show_note -%}
+          <label style="display:grid;gap:8px;font-size:13px;font-weight:700">{{ 'cart.note' | t }}
+            <textarea name="note" data-cart-note>{{ cart.note }}</textarea>
+          </label>
+        {%- endif -%}
+        <div class="cart-totals">
+          {%- for discount in cart.cart_level_discount_applications -%}
+            <div class="cart-totals__row"><span>{{ discount.title | escape }}</span><span>−{{ discount.total_allocated_amount | money }}</span></div>
+          {%- endfor -%}
+          <div class="cart-totals__row"><span>{{ 'cart.subtotal' | t }}</span><span>{{ cart.total_price | money_with_currency }}</span></div>
+          <small>{{ 'cart.taxes' | t }}</small>
+        </div>
+        <button type="submit" name="checkout" class="btn btn--block btn--tall">{{ 'cart.checkout' | t }} {% render 'icon', name: 'arrow' %}</button>
+        {%- if additional_checkout_buttons -%}<div>{{ content_for_additional_checkout_buttons }}</div>{%- endif -%}
+        <p class="product-error" data-cart-error role="alert" hidden></p>
+      </aside>
+    </form>
+  {%- else -%}
+    <div class="empty" style="justify-items:start;text-align:left">
+      <p class="lede muted">{{ 'cart.empty' | t }}</p>
+      <a href="{{ routes.all_products_collection_url }}" class="btn">{{ 'cart.empty_cta' | t }} {% render 'icon', name: 'arrow' %}</a>
+    </div>
+  {%- endif -%}
+</div>
+
+{% schema %}
+{
+  "name": "Cart",
+  "settings": [ { "type": "checkbox", "id": "show_note", "label": "Show order note", "default": true } ]
+}
+{% endschema %}
