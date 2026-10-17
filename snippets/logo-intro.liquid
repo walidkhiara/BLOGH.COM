@@ -1,0 +1,38 @@
+{%- comment -%}
+  Logo reveal intro. Hidden by default; an inline script shows it only on the
+  first homepage view of a session, and never for reduced-motion visitors.
+  Content underneath is fully rendered, so skipping is instant.
+{%- endcomment -%}
+<div class="intro" id="LogoIntro" hidden aria-hidden="true">
+  <video class="intro__video" muted playsinline preload="auto">
+    <source src="{{ 'izaven-reveal.webm' | asset_url }}" type="video/webm">
+    <source src="{{ 'izaven-reveal.mp4' | asset_url }}" type="video/mp4">
+  </video>
+  <button type="button" class="intro__skip" data-intro-skip>Skip</button>
+</div>
+<script>
+  (function () {
+    var intro = document.getElementById('LogoIntro');
+    var seen = false;
+    try { seen = sessionStorage.getItem('izaven-intro') === '1'; } catch (e) {}
+    if (seen || window.matchMedia('(prefers-reduced-motion: reduce)').matches) { intro.remove(); return; }
+    try { sessionStorage.setItem('izaven-intro', '1'); } catch (e) {}
+    var video = intro.querySelector('video');
+    var done = function () {
+      if (intro.classList.contains('is-leaving')) return;
+      intro.classList.add('is-leaving');
+      document.documentElement.classList.remove('intro-lock');
+      setTimeout(function () { intro.remove(); }, 600);
+    };
+    intro.hidden = false;
+    document.documentElement.classList.add('intro-lock');
+    video.addEventListener('ended', done);
+    var sources = video.querySelectorAll('source');
+    sources[sources.length - 1].addEventListener('error', done);
+    intro.querySelector('[data-intro-skip]').addEventListener('click', done);
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') done(); }, { once: true });
+    var play = video.play();
+    if (play && play.catch) play.catch(done);
+    setTimeout(done, 11000);
+  })();
+</script>

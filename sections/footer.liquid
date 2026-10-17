@@ -1,7 +1,7 @@
 <footer class="footer">
   <div class="page-width footer__top" style="--footer-cols: {{ section.blocks.size | at_least: 1 | at_most: 4 }}">
     <div class="footer__brand">
-      {% render 'logo', fill: '#fff' %}
+      {% render 'logo', tone: 'light' %}
       {%- if section.settings.blurb != blank -%}<p class="muted" style="color:#b4b4b8;max-width:34ch">{{ section.settings.blurb | escape }}</p>{%- endif -%}
       <div class="footer__social">
         {%- assign networks = 'instagram,tiktok,youtube,facebook,x' | split: ',' -%}
@@ -66,7 +66,7 @@
     { "type": "checkbox", "id": "show_localization", "label": "Show country / currency selector", "default": true },
     { "type": "checkbox", "id": "show_payment", "label": "Show payment icons", "default": true },
     { "type": "checkbox", "id": "show_wordmark", "label": "Show oversized wordmark", "default": true },
-    { "type": "text", "id": "wordmark", "label": "Wordmark text", "default": "BLOGH" }
+    { "type": "text", "id": "wordmark", "label": "Wordmark text", "info": "Defaults to the store name." }
   ],
   "blocks": [
     {

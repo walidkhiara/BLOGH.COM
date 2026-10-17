@@ -9,6 +9,8 @@
     <link rel="preconnect" href="https://cdn.shopify.com" crossorigin>
     {%- if settings.favicon != blank -%}
       <link rel="icon" type="image/png" href="{{ settings.favicon | image_url: width: 64, height: 64 }}">
+    {%- else -%}
+      <link rel="icon" type="image/png" href="{{ 'izaven-mark.png' | asset_url }}">
     {%- endif -%}
 
     <title>
@@ -32,6 +34,7 @@
   </head>
 
   <body class="template-{{ template.name | handle }}{% if settings.reveal_on_scroll %} reveal-on{% endif %}">
+    {%- if settings.intro_enabled and request.design_mode == false and template.name == 'index' -%}{% render 'logo-intro' %}{%- endif -%}
     <a class="skip-link" href="#MainContent">{{ 'accessibility.skip_to_content' | t }}</a>
 
     {% sections 'header-group' %}

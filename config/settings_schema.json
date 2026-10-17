@@ -1,18 +1,19 @@
 [
   {
     "name": "theme_info",
-    "theme_name": "BLOGH Performance",
+    "theme_name": "IZAVEN",
     "theme_version": "1.0.0",
-    "theme_author": "BLOGH",
+    "theme_author": "IZAVEN",
     "theme_documentation_url": "https://shopify.dev/docs/storefronts/themes",
     "theme_support_url": "https://help.shopify.com"
   },
   {
     "name": "Brand",
     "settings": [
-      { "type": "image_picker", "id": "logo", "label": "Logo image", "info": "Leave empty to use the built-in BLOGH wordmark." },
-      { "type": "range", "id": "logo_width", "label": "Logo width", "min": 60, "max": 240, "step": 4, "unit": "px", "default": 112 },
-      { "type": "image_picker", "id": "favicon", "label": "Favicon" }
+      { "type": "image_picker", "id": "logo", "label": "Logo image", "info": "Leave empty to use the bundled IZAVEN lockup." },
+      { "type": "range", "id": "logo_width", "label": "Logo width", "min": 60, "max": 240, "step": 4, "unit": "px", "default": 132 },
+      { "type": "image_picker", "id": "favicon", "label": "Favicon", "info": "Defaults to the IZAVEN mark." },
+      { "type": "checkbox", "id": "intro_enabled", "label": "Play logo reveal on first visit", "default": true, "info": "Once per browser session. Skippable; never shown to visitors who prefer reduced motion." }
     ]
   },
   {

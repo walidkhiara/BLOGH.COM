@@ -63,11 +63,7 @@
       </div>
 
       <a href="{{ routes.root_url }}" class="header__logo" style="--logo-w: {{ settings.logo_width }}px">
-        {%- if settings.logo -%}
-          {{ settings.logo | image_url: width: 480 | image_tag: alt: shop.name, loading: 'eager', widths: '240, 480' }}
-        {%- else -%}
-          {% render 'logo' %}
-        {%- endif -%}
+        {% render 'logo' %}
       </a>
 
       <div class="header__icons">
@@ -128,7 +124,7 @@
     </div>
   </div>
 </div>
-<style>.drawer-logo { width: 96px; height: auto; }</style>
+<style>.drawer-logo { width: 110px; height: auto; }</style>
 
 {% schema %}
 {

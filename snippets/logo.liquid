@@ -1,9 +1,17 @@
 {%- comment -%}
-  Original BLOGH wordmark: condensed caps with the brand slash.
-  Pass `fill` for colour, `class` for sizing.
+  IZAVEN lockup. Uses the logo uploaded in Theme settings → Brand when set,
+  otherwise the bundled lockup asset.
+  - tone: 'dark' (default, for light backgrounds) | 'light' (for dark backgrounds)
+  - class, width
 {%- endcomment -%}
-<svg class="{{ class }}" viewBox="0 0 236 48" role="img" aria-label="{{ shop.name | escape }}" xmlns="http://www.w3.org/2000/svg">
-  <polygon points="10,0 26,0 16,48 0,48" fill="var(--color-accent)"/>
-  <text x="34" y="41" textLength="200" lengthAdjust="spacingAndGlyphs" fill="{{ fill | default: 'currentColor' }}"
-    style="font-family: var(--font-heading); font-weight: 900; font-size: 50px; letter-spacing: -2px;">BLOGH</text>
-</svg>
+{%- liquid
+  assign asset = 'izaven-logo-black.png'
+  if tone == 'light'
+    assign asset = 'izaven-logo-white.png'
+  endif
+-%}
+{%- if settings.logo != blank and tone != 'light' -%}
+  {{ settings.logo | image_url: width: 600 | image_tag: alt: shop.name, class: class, widths: '200, 400, 600', loading: 'eager' }}
+{%- else -%}
+  <img src="{{ asset | asset_url }}" alt="{{ shop.name | escape }}" class="{{ class }}" width="1005" height="229" loading="eager">
+{%- endif -%}
