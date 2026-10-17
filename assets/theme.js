@@ -751,9 +751,56 @@
     });
   }
 
+  /* ---------------------------------------------------------------------
+     Background videos: pause off-screen, honour reduced motion, and a
+     pause/play toggle per section.
+     --------------------------------------------------------------------- */
+  const initVideos = (root = document) => {
+    const videos = $$('[data-bg-video] video', root);
+    if (!videos.length) return;
+    const setToggle = (section, paused) => {
+      const btn = section && $('[data-video-toggle]', section);
+      if (!btn) return;
+      btn.setAttribute('aria-pressed', String(paused));
+      btn.setAttribute('aria-label', paused ? 'Play background video' : 'Pause background video');
+    };
+    videos.forEach((video) => {
+      video.muted = true;
+      if (reducedMotion.matches) {
+        video.removeAttribute('autoplay');
+        video.pause();
+        video.dataset.userPaused = 'true';
+        setToggle(video.closest('section, .shopify-section'), true);
+      }
+    });
+    if ('IntersectionObserver' in window) {
+      const io = new IntersectionObserver((entries) => entries.forEach(({ target, isIntersecting }) => {
+        if (target.dataset.userPaused === 'true') return;
+        if (isIntersecting) target.play().catch(() => {});
+        else target.pause();
+      }), { threshold: 0.05 });
+      videos.forEach((v) => io.observe(v));
+    }
+  };
+  initVideos();
+  document.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-video-toggle]');
+    if (!btn) return;
+    const section = btn.closest('section, .shopify-section') || btn.parentElement;
+    const videos = $$('[data-bg-video] video', section);
+    const pause = btn.getAttribute('aria-pressed') !== 'true';
+    videos.forEach((v) => {
+      v.dataset.userPaused = String(pause);
+      if (pause) v.pause(); else v.play().catch(() => {});
+    });
+    btn.setAttribute('aria-pressed', String(pause));
+    btn.setAttribute('aria-label', pause ? 'Play background video' : 'Pause background video');
+  });
+
   /* Theme editor: re-run section-scoped modules when a section reloads. */
   document.addEventListener('shopify:section:load', (e) => {
     initCarousels(e.target);
     initReveal(e.target);
+    initVideos(e.target);
   });
 })();

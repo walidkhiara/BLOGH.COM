@@ -4,7 +4,9 @@
     <div class="editorial{% if s.reverse %} editorial--reverse{% endif %}">
       <div class="editorial__lead" data-reveal>
         <div class="media media--ratio">
-          {%- if s.image -%}
+          {%- if s.video -%}
+            {% render 'media-video', video: s.video, size: 1400 %}
+          {%- elsif s.image -%}
             {{ s.image | image_url: width: 1800 | image_tag: widths: '600, 900, 1200, 1800', sizes: '(min-width: 990px) 55vw, 100vw', loading: 'lazy', alt: s.image.alt | default: '' }}
           {%- else -%}
             <div class="media__fallback"><span>{{ s.heading | escape }}</span></div>
@@ -37,6 +39,7 @@
   "name": "Editorial story",
   "settings": [
     { "type": "image_picker", "id": "image", "label": "Lead image (portrait)" },
+    { "type": "video", "id": "video", "label": "Lead video (replaces lead image)" },
     { "type": "image_picker", "id": "image_2", "label": "Second image (landscape, optional)" },
     { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "The lab" },
     { "type": "textarea", "id": "heading", "label": "Heading", "default": "Tested in\n400 sessions" },

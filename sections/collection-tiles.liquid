@@ -19,7 +19,9 @@
         -%}
         <a href="{{ url }}" class="tile" data-reveal style="--reveal-i: {{ forloop.index0 }}" {{ block.shopify_attributes }}>
           <div class="media">
-            {%- if img -%}
+            {%- if block.settings.video -%}
+              {% render 'media-video', video: block.settings.video, size: 1200 %}
+            {%- elsif img -%}
               {{ img | image_url: width: 1600 | image_tag: widths: '500, 800, 1100, 1600', sizes: '(min-width: 750px) 50vw, 100vw', loading: 'lazy', alt: img.alt | default: title }}
             {%- else -%}
               <div class="media__fallback"><span>{{ title | escape }}</span></div>
@@ -57,6 +59,7 @@
       "settings": [
         { "type": "collection", "id": "collection", "label": "Collection" },
         { "type": "image_picker", "id": "image", "label": "Image", "info": "Defaults to the collection image." },
+        { "type": "video", "id": "video", "label": "Video (replaces image)", "info": "Portrait works best. Plays muted on loop." },
         { "type": "text", "id": "eyebrow", "label": "Eyebrow" },
         { "type": "text", "id": "title", "label": "Title", "info": "Defaults to the collection title." },
         { "type": "text", "id": "cta", "label": "Link label", "default": "Shop now" },

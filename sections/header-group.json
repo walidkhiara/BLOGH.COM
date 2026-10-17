@@ -8,7 +8,7 @@
         "m1": {
           "type": "message",
           "settings": {
-            "text": "Free delivery over \u20ac75 \u2014 30-day free returns",
+            "text": "Free delivery over $75 \u2014 30-day free returns",
             "link": ""
           }
         },

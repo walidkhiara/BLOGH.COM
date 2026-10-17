@@ -4,11 +4,23 @@
   assign mobile = s.image_mobile | default: s.image
   assign focal = desktop.presentation.focal_point | default: '50% 50%'
   assign focal_m = mobile.presentation.focal_point | default: focal
+  assign video = s.video
+  assign video_m = s.video_mobile | default: s.video
+  assign has_media = false
+  if desktop or video
+    assign has_media = true
+  endif
 -%}
-<section class="hero hero--{{ s.position }}{% unless desktop %} hero--fallback{% endunless %}" data-hero
+<section class="hero hero--{{ s.position }}{% unless has_media %} hero--fallback{% endunless %}" data-hero
   style="--hero-h: {{ s.height }}svh; --hero-h-mobile: {{ s.height_mobile }}svh; --scrim: {{ s.overlay | divided_by: 100.0 }}; --focal: {{ focal_m }}; --focal-desktop: {{ focal }}; --hero-fg: {{ s.text_color }};{% if s.position == 'middle-left' %} --scrim-dir: 90deg;{% endif %}"
   aria-label="{{ s.heading | strip_html | escape }}">
-  {%- if desktop -%}
+  {%- if video -%}
+    {%- if video_m != video -%}
+      <div class="hero__media hero__media--mobile">{% render 'media-video', video: video_m, size: 1200 %}</div>
+    {%- endif -%}
+    <div class="hero__media hero__media--desktop">{% render 'media-video', video: video %}</div>
+    {%- if s.overlay > 0 -%}<div class="hero__scrim" aria-hidden="true"></div>{%- endif -%}
+  {%- elsif desktop -%}
     {%- if s.image_mobile -%}
       <div class="hero__media hero__media--mobile">
         {{ mobile | image_url: width: 1200 | image_tag: widths: '600, 800, 1000, 1200', sizes: '100vw', loading: 'eager', fetchpriority: 'high', alt: mobile.alt | default: '' }}
@@ -23,6 +35,7 @@
     <div class="hero__fallback-word" aria-hidden="true">{{ shop.name | escape }}</div>
   {%- endif -%}
 
+  {%- if video -%}{% render 'video-toggle' %}{%- endif -%}
   <div class="hero__content">
     {%- if s.eyebrow != blank -%}<p class="eyebrow"><span class="slash" aria-hidden="true"></span>{{ s.eyebrow | escape }}</p>{%- endif -%}
     {%- if s.heading != blank -%}<h1 class="hero__heading h-display">{{ s.heading | escape | newline_to_br }}</h1>{%- endif -%}
@@ -47,6 +60,10 @@
   "settings": [
     { "type": "image_picker", "id": "image", "label": "Desktop image", "info": "2600×1500px or larger. Set the focal point in the image picker." },
     { "type": "image_picker", "id": "image_mobile", "label": "Mobile image", "info": "Portrait crop, 1200×1800px. Falls back to the desktop image." },
+    { "type": "header", "content": "Video" },
+    { "type": "video", "id": "video", "label": "Background video", "info": "Replaces the image. Upload in Content → Files. Plays muted on loop; keep it under ~15s and ~10MB." },
+    { "type": "video", "id": "video_mobile", "label": "Mobile video", "info": "Optional portrait version. Falls back to the background video." },
+    { "type": "header", "content": "Content" },
     { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "New season" },
     { "type": "textarea", "id": "heading", "label": "Heading", "default": "Built for the\nhard sets" },
     { "type": "richtext", "id": "text", "label": "Text", "default": "<p>Second-skin compression and sweat-mapped mesh, cut for lifting, running and everything between.</p>" },

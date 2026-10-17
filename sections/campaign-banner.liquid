@@ -6,12 +6,15 @@
   <div class="banner banner--{{ s.layout }} banner--{{ s.align }}{% if s.angled %} banner--angled{% endif %}"
     style="--banner-h: {{ s.height }}svh; --scrim: {{ s.overlay | divided_by: 100.0 }}; --focal: {{ focal }}; --banner-bg: {{ s.panel_color }}; --banner-fg: {{ s.text_color }};">
     <div class="banner__media">
-      {%- if s.image -%}
+      {%- if s.video -%}
+        {% render 'media-video', video: s.video %}
+      {%- elsif s.image -%}
         {{ s.image | image_url: width: 2600 | image_tag: widths: '750, 1100, 1500, 2000, 2600', sizes: '100vw', loading: 'lazy', alt: s.image.alt | default: '' }}
       {%- else -%}
         <div class="media__fallback"><span>{{ s.heading | escape }}</span></div>
       {%- endif -%}
     </div>
+    {%- if s.video -%}{% render 'video-toggle' %}{%- endif -%}
     {%- if s.layout == 'full' and s.overlay > 0 -%}<div class="banner__scrim" aria-hidden="true"></div>{%- endif -%}
     <div class="banner__content">
       {%- if s.layout == 'split' and s.index != blank -%}<span class="banner__index" data-reveal aria-hidden="true">{{ s.index | escape }}</span>{%- endif -%}
@@ -34,6 +37,7 @@
   "settings": [
     { "type": "select", "id": "layout", "label": "Layout", "default": "full", "options": [ { "value": "full", "label": "Full-bleed photo" }, { "value": "split", "label": "Photo + colour panel" } ] },
     { "type": "image_picker", "id": "image", "label": "Image" },
+    { "type": "video", "id": "video", "label": "Video (replaces image)", "info": "Upload in Content → Files. Plays muted on loop." },
     { "type": "text", "id": "index", "label": "Large number (split layout)", "default": "01" },
     { "type": "text", "id": "eyebrow", "label": "Eyebrow", "default": "Training" },
     { "type": "textarea", "id": "heading", "label": "Heading", "default": "Lift heavier.\nRecover faster." },

@@ -1,0 +1,11 @@
+{%- comment -%}
+  Background video from Shopify Files (setting type "video"). Muted, looped,
+  inline; the video's cover image shows until it plays.
+  - video: video object (required)
+  - class: extra class on the wrapper
+  - size: poster width, default 1920
+{%- endcomment -%}
+{%- assign poster_size = size | default: 1920 | append: 'x' -%}
+<div class="bg-video {{ class }}" data-bg-video>
+  {{ video | video_tag: autoplay: true, loop: true, muted: true, playsinline: true, controls: false, preload: 'metadata', image_size: poster_size }}
+</div>
