@@ -124,6 +124,21 @@
             assign mop = m[5] | strip | default: 100 | plus: 0
             assign ms = m[6] | strip | default: 0 | plus: 0
             assign mv = m[7] | strip | default: 1 | plus: 0
+
+            # Optional auto-switch: only when the owner added an enabled block for this product and picked the next product.
+            assign sw = nil
+            assign sw_secs = 4
+            for b in section.blocks
+              if b.type == 'auto_switch' and b.settings.enabled
+                assign bp = b.settings.product
+                assign bn = b.settings.next_product
+                if bp.handle == handle and bn.handle != blank and bn.handle != handle
+                  assign sw = bn
+                  assign sw_secs = b.settings.interval | default: 4
+                  break
+                endif
+              endif
+            endfor
           -%}
           {%- if product.title != blank -%}
             <a
@@ -132,36 +147,69 @@
               data-iz-item
               data-id="{{ idx }}"
               data-handle="{{ handle | escape }}"
+              {% if sw %}data-iz-switch="{{ sw_secs }}"{% endif %}
               {% if dv == 0 %}data-hd{% endif %}
               {% if mv == 0 %}data-hm{% endif %}
               style="--i:{{ idx }};--dx:{{ dx }};--dy:{{ dy }};--dw:{{ dw }};--dr:{{ dr }};--dz:{{ dz }};--do:{{ dop }};--ds:{{ ds }};--mx:{{ mx }};--my:{{ my }};--mw:{{ mw }};--mr:{{ mr }};--mz:{{ mz }};--mo:{{ mop }};--ms:{{ ms }};"
             >
-              {%- if custom_img != blank -%}
-                <img
-                  class="iz-item__img"
-                  src="{{ custom_img | escape }}"
-                  alt="{{ product.title | escape }}"
-                  loading="lazy"
-                  decoding="async"
-                  draggable="false"
-                >
+              {%- capture item_media -%}
+                {%- if custom_img != blank -%}
+                  <img
+                    class="iz-item__img"
+                    src="{{ custom_img | escape }}"
+                    alt="{{ product.title | escape }}"
+                    loading="lazy"
+                    decoding="async"
+                    draggable="false"
+                  >
+                {%- else -%}
+                  {{
+                    product.featured_media
+                    | image_url: width: 1000
+                    | image_tag:
+                      class: 'iz-item__img',
+                      loading: 'lazy',
+                      widths: '300, 500, 800, 1000',
+                      sizes: '(max-width: 749px) 40vw, 14vw',
+                      alt: product.title,
+                      draggable: 'false'
+                  }}
+                {%- endif -%}
+                <span class="iz-item__tag">
+                  <span class="iz-item__name">{{ product.title | escape }}</span>
+                  <span class="iz-item__price">{{ product.price | money }}</span>
+                </span>
+              {%- endcapture -%}
+
+              {%- if sw -%}
+                {%- comment -%}
+                  Both products sit in one grid cell, so the box never changes size and nothing shifts when they swap.
+                  Position, width, rotation, layer, opacity and shadow all come from the one placement.
+                {%- endcomment -%}
+                {%- capture next_media -%}
+                  {{
+                    sw.featured_media
+                    | image_url: width: 1000
+                    | image_tag:
+                      class: 'iz-item__img',
+                      loading: 'lazy',
+                      widths: '300, 500, 800, 1000',
+                      sizes: '(max-width: 749px) 40vw, 14vw',
+                      alt: sw.title,
+                      draggable: 'false'
+                  }}
+                  <span class="iz-item__tag">
+                    <span class="iz-item__name">{{ sw.title | escape }}</span>
+                    <span class="iz-item__price">{{ sw.price | money }}</span>
+                  </span>
+                {%- endcapture -%}
+                <span class="iz-sw__stack">
+                  <span class="iz-sw__slide is-current" data-href="{{ product.url }}">{{ item_media }}</span>
+                  <span class="iz-sw__slide" data-href="{{ sw.url }}" aria-hidden="true">{{ next_media }}</span>
+                </span>
               {%- else -%}
-                {{
-                  product.featured_media
-                  | image_url: width: 1000
-                  | image_tag:
-                    class: 'iz-item__img',
-                    loading: 'lazy',
-                    widths: '300, 500, 800, 1000',
-                    sizes: '(max-width: 749px) 40vw, 14vw',
-                    alt: product.title,
-                    draggable: 'false'
-                }}
+                {{ item_media }}
               {%- endif -%}
-              <span class="iz-item__tag">
-                <span class="iz-item__name">{{ product.title | escape }}</span>
-                <span class="iz-item__price">{{ product.price | money }}</span>
-              </span>
             </a>
           {%- endif -%}
         {%- endif -%}
@@ -386,6 +434,20 @@
   }
   .iz-item__price { color: var(--iz-muted); }
   .iz-item:focus-visible { outline: 2px solid var(--iz-warm); outline-offset: 5px; }
+
+  /* Auto-switch: both products share one grid cell, so the box is the same size throughout and nothing shifts. */
+  .iz-sw__stack { display: grid; }
+  .iz-sw__slide {
+    grid-area: 1 / 1;
+    place-self: center;
+    width: 100%;
+    opacity: 0;
+    scale: 0.96;
+    pointer-events: none;
+    transition: opacity 0.9s var(--iz-ease), scale 0.9s var(--iz-ease);
+  }
+  .iz-sw__slide.is-current { opacity: 1; scale: 1; pointer-events: auto; }
+  .iz-sw__slide:not(.is-current) .iz-item__tag { display: none; }
   .iz-item:focus-visible .iz-item__tag { opacity: 1; }
   @media (hover: hover) {
     .iz-item { transition: scale 0.6s var(--iz-ease); }
@@ -517,7 +579,7 @@
 
   /* Reduced motion: switch transitions off outright. A tiny non-zero duration still animates every property. */
   @media (prefers-reduced-motion: reduce) {
-    .iz-item, .iz-item__tag, .iz-pill, .iz-cta, .iz-cta svg, .iz-card__media img { transition: none !important; animation: none !important; }
+    .iz-item, .iz-item__tag, .iz-pill, .iz-cta, .iz-cta svg, .iz-card__media img, .iz-sw__slide { transition: none !important; animation: none !important; }
     .iz-js .iz-item { translate: none; }
     .iz-item:hover { scale: none; }
   }
@@ -563,6 +625,20 @@
       { "value": "contain", "label": "Show the whole image" }
     ] },
     { "type": "range", "id": "featured_image_size", "label": "Image size inside the frame", "min": 40, "max": 100, "step": 5, "unit": "%", "default": 100, "info": "Below 100% leaves a dark margin around the picture." }
+  ],
+  "blocks": [
+    {
+      "type": "auto_switch",
+      "name": "Auto-switch product",
+      "limit": 20,
+      "settings": [
+        { "type": "paragraph", "content": "Makes one product on the studio swap to another you choose, in the same spot, at the same size. It alternates between the two. Add one block per product." },
+        { "type": "product", "id": "product", "label": "Product on the studio", "info": "Must already be placed in the Placement layout. If it is placed more than once, each placement switches." },
+        { "type": "checkbox", "id": "enabled", "label": "Enable automatic switching", "default": true },
+        { "type": "product", "id": "next_product", "label": "Next product", "info": "You choose it. Nothing is picked for you. It uses the original's position, size, rotation and layer." },
+        { "type": "range", "id": "interval", "label": "Switching interval", "min": 2, "max": 30, "step": 1, "unit": "s", "default": 4 }
+      ]
+    }
   ],
   "presets": [
     { "name": "Studio showroom" }

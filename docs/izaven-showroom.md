@@ -20,10 +20,24 @@ Files live in `theme/` and mirror a Shopify theme (Horizon). Nothing here touche
 3. **Desktop / Mobile** switches which layout you are editing. They are stored separately, on separate photographs. Editing one never changes the other. The **Preview** menu shows 1920, 1440, 1024 and 768 px for desktop and 360, 390 and 430 px for mobile.
 4. **Scale all −10% / +10%** resizes every placement on the current layout at once (one undo step). To resize one product, select it and use the corner squares or the **Width / scale** box.
 5. **Add a product** from the search box. **Remove** only takes it off the studio; the product stays in your store. The eye icon hides it on the current layout only.
-6. **Save draft** keeps your work in this browser and restores it if you refresh.
+6. Your work is **saved automatically in this browser** as you go, so a refresh or an accidental close never loses it. (**Save draft** just confirms it.) It is only in that browser until you publish.
 7. **Copy layout**, then in the theme editor open **Home → Studio showroom → Placement layout**, paste, and **Save**. That paste is what puts it on the live store.
 
 Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer, Delete removes, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
+
+## Auto-switching a product
+
+Make a product on the studio swap to another one you choose, in exactly the same spot.
+
+1. In the theme editor open **Home → Studio showroom** and click **Add block → Auto-switch product**.
+2. **Product on the studio:** pick a product that is already placed in the Placement layout.
+3. **Enable automatic switching:** on or off, per product.
+4. **Next product:** you pick it. Nothing is ever chosen for you.
+5. **Switching interval:** 2–30 seconds, default 4.
+
+The two products **alternate** (A, then B, then A again) with a 0.9 second fade and a slight scale, using the original placement's position, width, rotation, layer, opacity and shadow, on desktop and on mobile. The next product uses its own store photo and its own title, price and link. Add one block per product; any number of products can switch, each on its own timer, and products without a block never change. A block is ignored if it is switched off, if the next product is the same one or has been deleted, or if the product is not placed.
+
+It pauses while the tab is hidden, while the studio is off screen, and while a visitor hovers or focuses that product. For visitors who prefer reduced motion it does not switch automatically. The placement editor always shows the original product so you can position it, and marks those placements "auto-switches".
 
 ## Scaling and moving each product on its own
 
@@ -41,7 +55,7 @@ In **Home → Studio showroom**:
 
 ## What it cannot do, and why
 
-- **It cannot publish by itself.** A storefront page cannot write to Shopify, and putting an admin key in the page would expose it to everyone. So publishing is one paste. "Save draft" is per browser and is not shared.
+- **It cannot publish by itself.** The editor saves automatically in your browser, but a storefront page cannot write to Shopify. A storefront page cannot write to Shopify, and putting an admin key in the page would expose it to everyone. So publishing is one paste. "Save draft" is per browser and is not shared.
 - **No login on the editor URL.** It can only read your public product list and produce text, so there is nothing to protect, but anyone who knows the address can open it and play. They cannot change your store.
 - **Layers are between products only.** The studio is one flat photograph, so a product cannot go *behind* the podium or a clothing rack. That would need a separate cut-out layer of the foreground artwork.
 - **Up to 20 placements per page.** Shopify limits how many different products a page may look up by handle.

@@ -70,18 +70,19 @@ export async function buildPage(opts = {}) {
   };
 
   const engine = makeEngine(globals);
-  async function section(file, overrides) {
+  async function section(file, overrides, blocks = []) {
     const p = prep(fs.readFileSync(path.join(theme, 'sections', file), 'utf8'));
     const settings = { ...defaults(p.schema), ...overrides };
     for (const k of ['shop_menu', 'brand_menu', 'help_menu']) if (settings[k] === '') settings[k] = undefined;
     for (const k of ['shop_menu', 'brand_menu', 'help_menu']) if (settings[k] === '') settings[k] = undefined;
-    const html = await engine.parseAndRender(p.src, { section: { id: file.replace('.liquid', ''), settings } });
+    const html = await engine.parseAndRender(p.src, { section: { id: file.replace('.liquid', ''), settings, blocks } });
     return { html, css: p.css };
   }
 
   const defaultLayout = fs.readFileSync(path.join(here, 'layout.default.txt'), 'utf8');
   const layout = opts.layout !== undefined ? opts.layout : defaultLayout;
-  const show = await section('izaven-showroom.liquid', { layout, ...(opts.showroom || {}) });
+  const blocks = (opts.switches || []).map((s) => ({ type: 'auto_switch', settings: { enabled: s.e !== false, product: product(s.p), next_product: product(s.n), interval: s.i } }));
+  const show = await section('izaven-showroom.liquid', { layout, ...(opts.showroom || {}) }, blocks);
   const foot = await section('izaven-footer.liquid', opts.footer || {});
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>harness</title>
@@ -108,6 +109,7 @@ export function serve(port = 0, defaults_ = {}) {
         const sc = u.searchParams.get('scenario') || 'default';
         const o = { ...defaults_ };
         if (u.searchParams.get('layout')) o.layout = Buffer.from(u.searchParams.get('layout'), 'base64').toString('utf8');
+        if (u.searchParams.get('sw')) o.switches = JSON.parse(Buffer.from(u.searchParams.get('sw'), 'base64').toString('utf8'));
         if (sc === 'empty') o.layout = '';
         if (sc === 'missing') o.layout = '# test\nthis-product-was-deleted | f | 50,50,12,0,1,100,0,1 | 50,50,24,0,1,100,0,1\nmens-premium-polo | f | 50,60,12,0,2,100,0,1 | 50,40,26,0,2,100,0,1';
         if (sc === 'crlf') o.layout = fs.readFileSync(path.join(here, 'layout.default.txt'), 'utf8').replace(/\n/g, '\r\n');

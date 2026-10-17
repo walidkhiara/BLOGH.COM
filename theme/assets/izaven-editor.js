@@ -104,6 +104,8 @@
     'html.iz-editing .iz-item{cursor:grab;touch-action:none;transition:none!important;translate:none!important;scale:none!important;opacity:calc(var(--o)/100)!important}',
     'html.iz-editing .iz-item.is-ghost{display:block!important;opacity:.26!important;outline:1px dashed rgba(255,255,255,.6)}',
     'html.iz-editing .iz-item__tag{display:none}',
+    'html.iz-editing .iz-sw__slide:not(.is-current){display:none}',
+    'html.iz-editing .iz-sw__slide{transition:none!important}',
     'html.iz-editing .iz-item.is-dragging{cursor:grabbing}',
     '.ized-box,.ized-box *{transition:none!important}',
     '.ized-box{position:absolute;z-index:200;border:1px solid #ffeed6;pointer-events:none;box-sizing:border-box}',
@@ -174,7 +176,14 @@
 
     var shopKey = (root.getAttribute('data-shop-handle') || location.host) + ':' +
       ((window.Shopify && window.Shopify.theme && window.Shopify.theme.id) || 'live') + ':' + root.getAttribute('data-section-id');
-    var STORE_KEY = 'izaven:placements:' + shopKey;
+    var shopName = root.getAttribute('data-shop-handle') || location.host;
+    var STORE_KEY = 'izaven:placements:' + shopName + ':' + root.getAttribute('data-section-id');
+    var LEGACY_KEY = 'izaven:placements:' + shopKey;
+    var storageOk = true;
+    var lastCopied = null;
+    var exitArmed = false;
+    var autosaveTimer = null;
+    var restoredNote = false;
 
     var liveText = template ? (template.content ? template.content.textContent : template.textContent) : '';
     var catalog = {};
@@ -202,7 +211,7 @@
     /* draft restore */
     var restored = false;
     try {
-      var raw = localStorage.getItem(STORE_KEY);
+      var raw = localStorage.getItem(STORE_KEY) || localStorage.getItem(LEGACY_KEY);
       if (raw) {
         var draft = JSON.parse(raw);
         if (draft && draft.text && draft.text !== liveNormalized) {
@@ -440,7 +449,7 @@
         var missing = !els[it.id] && !productOf(it);
         return '<li data-id="' + it.id + '" tabindex="0" role="option" aria-selected="' + (it.id === selId) + '"' + (c.v ? '' : ' class="is-off"') + '>' +
           '<img class="ized-thumb" alt="" src="' + esc(thumbOf(it)) + '">' +
-          '<span class="ized-name">' + esc(titleOf(it)) + '<span class="ized-sub">' + (missing ? 'Product not found' : 'Layer ' + c.z + (c.v ? '' : ' · hidden')) + '</span></span>' +
+          '<span class="ized-name">' + esc(titleOf(it)) + '<span class="ized-sub">' + (missing ? 'Product not found' : 'Layer ' + c.z + (c.v ? '' : ' · hidden') + (els[it.id] && els[it.id].hasAttribute('data-iz-switch') ? ' · auto-switches' : '')) + '</span></span>' +
           '<button type="button" class="ized-ico" data-toggle="' + it.id + '" aria-label="' + (c.v ? 'Hide ' : 'Show ') + esc(titleOf(it)) + ' on ' + mode + '" aria-pressed="' + !!c.v + '">' +
           (c.v ? '&#9673;' : '&#9676;') + '</button></li>';
       }).join('');
@@ -513,15 +522,30 @@
       if (r) r.disabled = !future.length;
     }
 
-    function dirtyState() {
+    // Every change is kept in this browser automatically, so a refresh never loses work.
+    function persist() {
+      var text = ser();
+      try {
+        if (text === liveNormalized) localStorage.removeItem(STORE_KEY);
+        else localStorage.setItem(STORE_KEY, JSON.stringify({ at: Date.now(), text: text }));
+        storageOk = true;
+      } catch (err) { storageOk = false; }
+    }
+    function scheduleAutosave() {
+      clearTimeout(autosaveTimer);
+      autosaveTimer = setTimeout(function () { persist(); dirtyState(true); }, 350);
+    }
+
+    function dirtyState(fromAutosave) {
       var now = ser();
       textEl.value = now;
-      var parts = [];
-      if (now === liveNormalized) parts.push('<b>Matches your store.</b>');
-      else parts.push('Differs from your store. Copy the layout and paste it into the theme editor to publish.');
-      if (now !== savedText) parts.unshift('<b>Unsaved changes.</b>');
-      else if (now !== liveNormalized) parts.unshift('Draft saved in this browser.');
-      statusEl.innerHTML = parts.join(' ');
+      exitArmed = false;
+      if (!fromAutosave) { restoredNote = false; scheduleAutosave(); }
+      if (now === liveNormalized) { statusEl.innerHTML = '<b>Matches your store.</b>'; return; }
+      var where = storageOk
+        ? '<b>Saved automatically in this browser.</b>'
+        : '<b>Could not save in this browser.</b> Use Copy layout so you do not lose this.';
+      statusEl.innerHTML = (restoredNote ? '<b>Restored your saved draft.</b> ' : '') + where + ' <b>Not on your store yet.</b> Press Copy layout and paste it into the theme editor.';
     }
 
     function say(html) { statusEl.innerHTML = html; }
@@ -617,20 +641,21 @@
 
     function save() {
       var text = ser();
-      try {
-        localStorage.setItem(STORE_KEY, JSON.stringify({ at: Date.now(), text: text }));
-        savedText = text;
-        dirtyState();
-        say('<b>Draft saved in this browser</b> at ' + new Date().toLocaleTimeString() + '. It is not on your store yet: use Copy layout.');
-      } catch (e) {
-        say('<b>Could not save.</b> This browser blocks storage here. Use Copy layout instead.');
-      }
+      persist();
+      if (!storageOk) { say('<b>Could not save.</b> This browser blocks storage here. Use Copy layout instead.'); return; }
+      savedText = text;
+      dirtyState(true);
+      say('<b>Draft saved in this browser</b> at ' + new Date().toLocaleTimeString() + '. It is not on your store yet: use Copy layout.');
     }
 
     function copyLayout() {
       var text = ser();
       var done = function () {
-        say('<b>Layout copied.</b> Theme editor → Home → Studio showroom → Placement layout → paste → Save.');
+        lastCopied = text;
+        var shop = (window.Shopify && window.Shopify.shop) || shopName;
+        var tid = window.Shopify && window.Shopify.theme && window.Shopify.theme.id;
+        var link = 'https://' + shop + '/admin/themes' + (tid ? '/' + tid + '/editor' : '');
+        say('<b>Layout copied.</b> <a href="' + esc(link) + '" target="_blank" rel="noopener" style="color:#ffeed6">Open the theme editor</a> → Home → Studio showroom → Placement layout → paste → Save.');
       };
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text).then(done, function () { fallbackCopy(text); });
@@ -643,6 +668,13 @@
     }
 
     function exitEditor() {
+      var now = ser();
+      if (now !== liveNormalized && now !== lastCopied && !exitArmed) {
+        exitArmed = true;
+        say('<b>These changes are not on your store yet.</b> They are saved in this browser only. Press Copy layout first, or press Exit again to leave.');
+        return;
+      }
+      persist();
       var u = new URL(location.href);
       u.searchParams.delete('izaven-editor');
       location.href = u.toString();
@@ -984,9 +1016,12 @@
     });
 
     window.addEventListener('beforeunload', function (e) {
-      if (ser() !== savedText) { e.preventDefault(); e.returnValue = ''; }
+      persist();
+      if (!storageOk && ser() !== liveNormalized) { e.preventDefault(); e.returnValue = ''; }
     });
 
+    document.addEventListener('visibilitychange', function () { if (document.hidden) persist(); });
+    window.addEventListener('pagehide', persist);
     if ('ResizeObserver' in window) new ResizeObserver(placeBox).observe(stage);
     window.addEventListener('resize', placeBox);
 
@@ -1001,8 +1036,8 @@
     renderCardList();
     renderCardInspector();
     buttons();
-    dirtyState();
-    if (restored) say('<b>Restored your saved draft.</b> It differs from your store. Cancel returns to the draft; Copy layout publishes it.');
+    restoredNote = restored;
+    dirtyState(true);
     renderResults();
 
     var root_ = (window.Shopify && window.Shopify.routes && window.Shopify.routes.root) || '/';
