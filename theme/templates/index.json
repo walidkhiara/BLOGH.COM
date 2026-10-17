@@ -1,0 +1,18 @@
+{
+  "sections": {
+    "showroom": {
+      "type": "izaven-showroom",
+      "settings": {
+        "background_alt": "IZAVEN showroom: black marble studio with a chrome logo wall, clothing racks and a central podium",
+        "show_nav": true,
+        "cta_label": "Shop the collection",
+        "layout": "# handle | style | desktop x,y,w,r,z,o,s,v | mobile x,y,w,r,z,o,s,v | image (optional)\nmen-s-lace-up-canvas-shoes | f | 45,63.5,10.5,0,4,100,45,1 | 50,46.5,26,0,4,100,45,1\nmens-premium-polo | f | 57,64.5,8.5,0,3,100,45,1 | 50,80.5,30,0,3,100,45,1\nunisex-half-zip-pullover | f | 27,80,9.5,-3,3,100,45,1 | 30,60,34,-3,3,100,45,1\nminimalist-japanese-calligraphy-sweatpants | f | 73,80,9.5,3,2,100,45,1 | 70,68,34,3,2,100,45,1",
+        "featured_heading": "Latest",
+        "featured_count": 8
+      }
+    }
+  },
+  "order": [
+    "showroom"
+  ]
+}

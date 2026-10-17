@@ -1,0 +1,18 @@
+{
+  "type": "footer",
+  "name": "t:names.footer",
+  "sections": {
+    "izaven_footer": {
+      "type": "izaven-footer",
+      "settings": {
+        "statement": "More than clothing.",
+        "newsletter_text": "Join the community for first access to drops and restocks.",
+        "newsletter_button": "Subscribe",
+        "show_payment_icons": true
+      }
+    }
+  },
+  "order": [
+    "izaven_footer"
+  ]
+}

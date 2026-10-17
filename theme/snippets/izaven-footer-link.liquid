@@ -1,0 +1,30 @@
+{%- comment -%}
+  Renders one footer list item only when its destination exists, so the footer never links to a page that has not been created.
+
+  Accepts:
+  - label {string} - visible link text
+  - page_handles {string} - comma-separated page handles; the first that exists wins
+  - url {string} - optional direct URL (a store policy); used when no page is found
+
+  @example
+  {% render 'izaven-footer-link', label: 'FAQ', page_handles: 'faq,faqs' %}
+  {% render 'izaven-footer-link', label: 'Privacy Policy', url: shop.privacy_policy.url %}
+{%- endcomment -%}
+{%- liquid
+  assign target = ''
+  if page_handles != blank
+    assign handle_list = page_handles | split: ','
+    for h in handle_list
+      assign found = pages[h]
+      if found.url != blank and target == ''
+        assign target = found.url
+      endif
+    endfor
+  endif
+  if target == '' and url != blank
+    assign target = url
+  endif
+-%}
+{%- if target != blank -%}
+  <li><a class="izf__link" href="{{ target }}">{{ label | escape }}</a></li>
+{%- endif -%}
