@@ -33,6 +33,6 @@
     document.addEventListener('keydown', function (e) { if (e.key === 'Escape' || e.key === 'Enter' || e.key === ' ') done(); }, { once: true });
     var play = video.play();
     if (play && play.catch) play.catch(done);
-    setTimeout(done, 11000);
+    setTimeout(done, 4500);
   })();
 </script>
