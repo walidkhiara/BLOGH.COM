@@ -25,6 +25,18 @@ Files live in `theme/` and mirror a Shopify theme (Horizon). Nothing here touche
 
 Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer, Delete removes, Ctrl/Cmd+Z undo, Ctrl/Cmd+Shift+Z redo.
 
+## Resizing and moving a product from the theme editor (saves automatically)
+
+In **Home → Studio showroom → Add block → Adjust product size and position**:
+
+1. **Product on the studio:** pick a product that is already placed.
+2. **Desktop** and **Mobile** each have their own **Size** (30–250%), **Move left / right** and **Move up / down** (±25% of the studio), **Rotate** (±45°) and a **Hide** checkbox.
+3. Press **Save** at the top right of the theme editor. Shopify applies it to the store itself; there is nothing to copy or paste.
+
+These sliders are applied **on top of the Placement layout**: Size 100% and Move 0 mean no change, Size 150% makes the product one and a half times as wide as the layout says. Add one block per product. If two blocks name the same product, the first one is used. Moves are clamped to stay inside the studio.
+
+The placement editor (drag and resize) shows the plain layout without these sliders, and marks the affected products. Use whichever method you prefer; the sliders are the one that saves by itself.
+
 ## Putting your changes on the store
 
 A page on your storefront cannot write to Shopify (that needs a private admin key, which must never sit in a public page). There are three ways to get the editor's layout onto the store:

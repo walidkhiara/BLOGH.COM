@@ -88,7 +88,8 @@ export async function buildPage(opts = {}) {
     keys.forEach((k, i) => { settings[k] = list[i] ? product(list[i]) : undefined; });
     return { type: 'auto_switch', settings };
   });
-  const show = await section('izaven-showroom.liquid', { layout, ...(opts.showroom || {}) }, blocks);
+  const adjustBlocks = (opts.adjusts || []).map((a) => ({ type: 'adjust_product', settings: { product: product(a.p), d_size: a.ds ?? 100, d_x: a.dx ?? 0, d_y: a.dy ?? 0, d_rotate: a.dr ?? 0, hide_desktop: !!a.hd, m_size: a.ms ?? 100, m_x: a.mx ?? 0, m_y: a.my ?? 0, m_rotate: a.mr ?? 0, hide_mobile: !!a.hm } }));
+  const show = await section('izaven-showroom.liquid', { layout, ...(opts.showroom || {}) }, [...blocks, ...adjustBlocks]);
   const foot = await section('izaven-footer.liquid', opts.footer || {});
 
   return `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>harness</title>
@@ -115,6 +116,7 @@ export function serve(port = 0, defaults_ = {}) {
         const sc = u.searchParams.get('scenario') || 'default';
         const o = { ...defaults_ };
         if (u.searchParams.get('layout')) o.layout = Buffer.from(u.searchParams.get('layout'), 'base64').toString('utf8');
+        if (u.searchParams.get('adj')) o.adjusts = JSON.parse(Buffer.from(u.searchParams.get('adj'), 'base64').toString('utf8'));
         if (u.searchParams.get('sw')) o.switches = JSON.parse(Buffer.from(u.searchParams.get('sw'), 'base64').toString('utf8'));
         if (u.searchParams.get('repo')) o.showroom = { ...(o.showroom || {}), apply_repo: u.searchParams.get('repo') };
         if (sc === 'empty') o.layout = '';

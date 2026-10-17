@@ -253,6 +253,7 @@
           '<p class="ized-help">Desktop and mobile are separate layouts on separate photographs. Editing one never changes the other.</p></section>' +
         '<div data-pane="studio">' +
         '<section><h3>Placements <span data-count></span></h3><ul class="ized-list" data-list></ul>' +
+          '<p class="ized-help" data-adj-note' + (root.querySelector('[data-adjusted]') ? '' : ' hidden') + '>Some products also have size or position sliders set in the theme editor. Those are applied on top of this layout on your store, but this editor shows the layout without them.</p>' +
           '<div class="ized-two"><button type="button" class="ized-btn" data-act="scale-down" title="Make every placement 10% smaller on this layout">Scale all −10%</button><button type="button" class="ized-btn" data-act="scale-up" title="Make every placement 10% larger on this layout">Scale all +10%</button></div>' +
           '<div style="margin-top:10px"><input type="search" data-ctl="search" placeholder="Add a product from your store…" aria-label="Search products to add"><ul class="ized-results" data-results></ul></div></section>' +
         '<section data-inspector></section></div>' +
@@ -452,7 +453,7 @@
         var missing = !els[it.id] && !productOf(it);
         return '<li data-id="' + it.id + '" tabindex="0" role="option" aria-selected="' + (it.id === selId) + '"' + (c.v ? '' : ' class="is-off"') + '>' +
           '<img class="ized-thumb" alt="" src="' + esc(thumbOf(it)) + '">' +
-          '<span class="ized-name">' + esc(titleOf(it)) + '<span class="ized-sub">' + (missing ? 'Product not found' : 'Layer ' + c.z + (c.v ? '' : ' · hidden') + (els[it.id] && els[it.id].hasAttribute('data-iz-switch') ? ' · auto-switches' : '')) + '</span></span>' +
+          '<span class="ized-name">' + esc(titleOf(it)) + '<span class="ized-sub">' + (missing ? 'Product not found' : 'Layer ' + c.z + (c.v ? '' : ' · hidden') + (els[it.id] && els[it.id].hasAttribute('data-iz-switch') ? ' · auto-switches' : '') + (els[it.id] && els[it.id].hasAttribute('data-adjusted') ? ' · size sliders applied on store' : '')) + '</span></span>' +
           '<button type="button" class="ized-ico" data-toggle="' + it.id + '" aria-label="' + (c.v ? 'Hide ' : 'Show ') + esc(titleOf(it)) + ' on ' + mode + '" aria-pressed="' + !!c.v + '">' +
           (c.v ? '&#9673;' : '&#9676;') + '</button></li>';
       }).join('');

@@ -126,6 +126,26 @@
             assign ms = m[6] | strip | default: 0 | plus: 0
             assign mv = m[7] | strip | default: 1 | plus: 0
           -%}
+          {%- comment -%}
+            Optional per-product sliders from the theme editor ("Adjust product" blocks). They are applied on
+            top of the layout values, so size 100% and move 0 mean no change. Saved by Shopify's own Save.
+          {%- endcomment -%}
+          {%- assign adjusted = false -%}
+          {%- for b in section.blocks -%}
+            {%- if b.type == 'adjust_product' and adjusted == false and b.settings.product.handle == handle -%}
+              {%- assign adjusted = true -%}
+              {%- assign dw = dw | times: b.settings.d_size | divided_by: 100.0 | at_least: 1 | at_most: 95 -%}
+              {%- assign dx = dx | plus: b.settings.d_x | at_least: 0 | at_most: 100 -%}
+              {%- assign dy = dy | plus: b.settings.d_y | at_least: 0 | at_most: 100 -%}
+              {%- assign dr = dr | plus: b.settings.d_rotate -%}
+              {%- assign mw = mw | times: b.settings.m_size | divided_by: 100.0 | at_least: 1 | at_most: 95 -%}
+              {%- assign mx = mx | plus: b.settings.m_x | at_least: 0 | at_most: 100 -%}
+              {%- assign my = my | plus: b.settings.m_y | at_least: 0 | at_most: 100 -%}
+              {%- assign mr = mr | plus: b.settings.m_rotate -%}
+              {%- if b.settings.hide_desktop -%}{%- assign dv = 0 -%}{%- endif -%}
+              {%- if b.settings.hide_mobile -%}{%- assign mv = 0 -%}{%- endif -%}
+            {%- endif -%}
+          {%- endfor -%}
           {%- if product.title != blank -%}
             {%- comment -%}
               Optional auto-switch. Only when the owner added an enabled block for this product and picked
@@ -179,6 +199,7 @@
               data-id="{{ idx }}"
               data-handle="{{ handle | escape }}"
               {% if sw_count > 1 %}data-iz-switch="{{ sw_secs }}"{% endif %}
+              {% if adjusted %}data-adjusted{% endif %}
               {% if dv == 0 %}data-hd{% endif %}
               {% if mv == 0 %}data-hm{% endif %}
               style="--i:{{ idx }};--dx:{{ dx }};--dy:{{ dy }};--dw:{{ dw }};--dr:{{ dr }};--dz:{{ dz }};--do:{{ dop }};--ds:{{ ds }};--mx:{{ mx }};--my:{{ my }};--mw:{{ mw }};--mr:{{ mr }};--mz:{{ mz }};--mo:{{ mop }};--ms:{{ ms }};"
@@ -644,6 +665,27 @@
     { "type": "range", "id": "featured_image_size", "label": "Image size inside the frame", "min": 40, "max": 100, "step": 5, "unit": "%", "default": 100, "info": "Below 100% leaves a dark margin around the picture." }
   ],
   "blocks": [
+    {
+      "type": "adjust_product",
+      "name": "Adjust product size and position",
+      "limit": 20,
+      "settings": [
+        { "type": "paragraph", "content": "Resize, move or rotate one product on the studio with sliders. Shopify's Save applies it to your store, with nothing to paste. It is applied on top of the Placement layout, so 100% and 0 mean no change. Add one block per product." },
+        { "type": "product", "id": "product", "label": "Product on the studio", "info": "Must already be placed in the Placement layout." },
+        { "type": "header", "content": "Desktop" },
+        { "type": "range", "id": "d_size", "label": "Size", "min": 30, "max": 250, "step": 5, "unit": "%", "default": 100 },
+        { "type": "range", "id": "d_x", "label": "Move left / right", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0, "info": "Percent of the studio width. Negative moves left." },
+        { "type": "range", "id": "d_y", "label": "Move up / down", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0, "info": "Percent of the studio height. Negative moves up." },
+        { "type": "range", "id": "d_rotate", "label": "Rotate", "min": -45, "max": 45, "step": 1, "unit": "°", "default": 0 },
+        { "type": "checkbox", "id": "hide_desktop", "label": "Hide on desktop", "default": false },
+        { "type": "header", "content": "Mobile" },
+        { "type": "range", "id": "m_size", "label": "Size", "min": 30, "max": 250, "step": 5, "unit": "%", "default": 100 },
+        { "type": "range", "id": "m_x", "label": "Move left / right", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0 },
+        { "type": "range", "id": "m_y", "label": "Move up / down", "min": -25, "max": 25, "step": 0.5, "unit": "%", "default": 0 },
+        { "type": "range", "id": "m_rotate", "label": "Rotate", "min": -45, "max": 45, "step": 1, "unit": "°", "default": 0 },
+        { "type": "checkbox", "id": "hide_mobile", "label": "Hide on mobile", "default": false }
+      ]
+    },
     {
       "type": "auto_switch",
       "name": "Auto-switch product",

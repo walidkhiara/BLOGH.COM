@@ -11,13 +11,14 @@ const url = (arr, extra = '') => `${base}/?sw=${sw(arr)}${extra}`;
 const TWO = [{ p: POLO, n: SHOES, i: 4 }, { p: PANTS, n: ZIP, i: 6 }];
 // the fake clock otherwise keeps ticking during page load, which would eat into the first interval
 const freeze = async (page) => { await page.clock.install({ time: new Date('2026-01-01T00:00:00Z') }); await page.clock.pauseAt(new Date('2026-01-01T00:00:01Z')); };
+const go = async (page, u) => { await page.goto(u, { waitUntil: 'networkidle' }); await page.waitForTimeout(1700); };
 const mk = async (o = {}) => { const ctx = await b.newContext({ viewport: { width: 1440, height: 900 }, ...o }); const page = await ctx.newPage(); const errors = []; page.on('console', (m) => { if (m.type() === 'error' && !/favicon|404/.test(m.text())) errors.push(m.text()); }); page.on('pageerror', (e) => errors.push(e.message)); return { ctx, page, errors }; };
 const shown = (page, h) => page.evaluate((h) => { const a = document.querySelector(`[data-iz-item][data-handle="${h}"]`); return { href: a.getAttribute('href').split('/').pop(), cur: a.querySelector('.iz-sw__slide.is-current')?.getAttribute('data-href')?.split('/').pop() || null, name: (a.querySelector('.iz-sw__slide.is-current .iz-item__name') || a.querySelector('.iz-item__name')).textContent }; }, h);
 const rect = (page, h) => page.evaluate((h) => { const a = document.querySelector(`[data-iz-item][data-handle="${h}"]`); const r = a.getBoundingClientRect(); const s = document.querySelector('[data-iz-stage]').getBoundingClientRect(); return { cx: +(((r.left + r.width / 2 - s.left) / s.width) * 100).toFixed(2), cy: +(((r.top + r.height / 2 - s.top) / s.height) * 100).toFixed(2), w: +r.width.toFixed(1), h: +r.height.toFixed(1), stageH: +s.height.toFixed(1) }; }, h);
 const same = (a, c) => a.cx === c.cx && a.cy === c.cy && Math.abs(a.w - c.w) < 0.6 && Math.abs(a.h - c.h) < 0.6 && Math.abs(a.stageH - c.stageH) < 0.6;
 
 // ---- 1. markup: only chosen products switch
-{ const { ctx, page, errors } = await mk(); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page, errors } = await mk(); await go(page, url(TWO));
   const flags = await page.$$eval('[data-iz-item]', (els) => els.map((e) => [e.dataset.handle, e.hasAttribute('data-iz-switch'), !!e.querySelector('.iz-sw__stack')]));
   ok('only the two chosen products get switching', JSON.stringify(flags.filter((f) => f[1]).map((f) => f[0]).sort()) === JSON.stringify([PANTS, POLO].sort()), JSON.stringify(flags));
   ok('the other two placements have no extra markup', flags.filter((f) => !f[1]).every((f) => f[2] === false));
@@ -27,7 +28,7 @@ const same = (a, c) => a.cx === c.cx && a.cy === c.cy && Math.abs(a.w - c.w) < 0
   ok('no console errors', errors.length === 0, errors.join('|')); await ctx.close(); }
 
 // ---- 2. timing, independence, position, loop (controlled clock)
-{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await freeze(page); await go(page, url(TWO));
   const before = { polo: await rect(page, POLO), pants: await rect(page, PANTS), shoes: await rect(page, SHOES), zip: await rect(page, ZIP) };
   const otherBefore = { shoes: await shown(page, SHOES), zip: await shown(page, ZIP) };
   await page.clock.runFor(3900);
@@ -54,7 +55,7 @@ const same = (a, c) => a.cx === c.cx && a.cy === c.cy && Math.abs(a.w - c.w) < 0
   await ctx.close(); }
 
 // ---- 2b. more than two products: an ordered cycle that wraps back to the first
-{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url([{ p: POLO, n: [SHOES, ZIP, PANTS], i: 3 }]), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await freeze(page); await go(page, url([{ p: POLO, n: [SHOES, ZIP, PANTS], i: 3 }]));
   ok('4 products in one placement', (await page.locator('[data-iz-item][data-handle="' + POLO + '"] .iz-sw__slide').count()) === 4);
   const r0 = await rect(page, POLO);
   const order = [];
@@ -69,7 +70,7 @@ for (const [label, list, expectCount, expectOrder] of [
   ['a product picked twice appears once', [SHOES, SHOES, ZIP], 3, [SHOES, ZIP, POLO]],
   ['the placed product repeated in the list is ignored', [POLO, SHOES], 2, [SHOES, POLO]],
   ['a deleted product in the middle is skipped', [SHOES, 'deleted-product', ZIP], 3, [SHOES, ZIP, POLO]]]) {
-  const { ctx, page } = await mk(); await freeze(page); await page.goto(url([{ p: POLO, n: list, i: 2 }]), { waitUntil: 'networkidle' });
+  const { ctx, page } = await mk(); await freeze(page); await go(page, url([{ p: POLO, n: list, i: 2 }]));
   const n = await page.locator('[data-iz-item][data-handle="' + POLO + '"] .iz-sw__slide').count();
   const got = []; for (let i = 0; i < expectOrder.length; i++) { await page.clock.runFor(i === 0 ? 2100 : 2000); got.push((await shown(page, POLO)).cur); }
   ok(label, n === expectCount && JSON.stringify(got) === JSON.stringify(expectOrder), `${n} slides: ${got.map((x) => x.slice(0, 8)).join(' > ')}`); await ctx.close(); }
@@ -85,19 +86,19 @@ for (const [label, cfg, expectSwitch] of [
   ['block for a product that is not placed is ignored', [{ p: 'not-placed', n: SHOES, i: 4 }], 0],
   ['all four enabled works', [{ p: POLO, n: SHOES, i: 4 }, { p: SHOES, n: POLO, i: 5 }, { p: ZIP, n: PANTS, i: 6 }, { p: PANTS, n: ZIP, i: 7 }], 4],
   ['custom interval is written to the page', [{ p: POLO, n: SHOES, i: 9 }], 1]]) {
-  const { ctx, page } = await mk(); await page.goto(url(cfg), { waitUntil: 'networkidle' });
+  const { ctx, page } = await mk(); await go(page, url(cfg));
   const n = await page.locator('[data-iz-switch]').count();
   ok(label, n === expectSwitch, `${n} switching`);
   if (label.startsWith('custom')) ok('interval attribute = 9 seconds', (await page.getAttribute('[data-iz-switch]', 'data-iz-switch')) === '9');
   await ctx.close(); }
-{ const { ctx, page } = await mk(); await page.goto(`${base}/`, { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await go(page, `${base}/`);
   ok('no blocks at all: homepage identical to before (none switch)', (await page.locator('[data-iz-switch]').count()) === 0 && (await page.locator('.iz-sw__stack').count()) === 0); await ctx.close(); }
 
 // ---- 4. pause rules
-{ const { ctx, page } = await mk({ reducedMotion: 'reduce' }); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk({ reducedMotion: 'reduce' }); await freeze(page); await go(page, url(TWO));
   await page.clock.runFor(30000);
   ok('reduced motion: nothing switches automatically', (await shown(page, POLO)).cur === POLO && (await shown(page, PANTS)).cur === PANTS); await ctx.close(); }
-{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await freeze(page); await go(page, url(TWO));
   await page.clock.runFor(1000);
   await page.evaluate(() => { Object.defineProperty(document, 'hidden', { configurable: true, get: () => true }); document.dispatchEvent(new Event('visibilitychange')); });
   await page.clock.runFor(20000);
@@ -107,7 +108,7 @@ for (const [label, cfg, expectSwitch] of [
   ok('back in view: waits a full interval, not an instant jump', (await shown(page, POLO)).cur === POLO);
   await page.clock.runFor(700);
   ok('back in view: switches after the interval', (await shown(page, POLO)).cur === SHOES); await ctx.close(); }
-{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await freeze(page); await go(page, url(TWO));
   const r = await rect(page, POLO); const box = await page.evaluate(() => { const x = document.querySelector('[data-iz-stage]').getBoundingClientRect(); return { x: x.left, y: x.top, w: x.width, h: x.height }; });
   await page.mouse.move(box.x + (r.cx / 100) * box.w, box.y + (r.cy / 100) * box.h);
   await page.clock.runFor(15000);
@@ -116,7 +117,7 @@ for (const [label, cfg, expectSwitch] of [
   ok('moving away resumes it', (await shown(page, POLO)).cur === SHOES); await ctx.close(); }
 
 // ---- 5. real-time transition quality
-{ const { ctx, page } = await mk(); await page.goto(url([{ p: POLO, n: SHOES, i: 2 }]), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await go(page, url([{ p: POLO, n: SHOES, i: 2 }]));
   const dur = await page.evaluate(() => getComputedStyle(document.querySelector('.iz-sw__slide')).transitionDuration);
   ok('transition lasts 0.9s (within the 700–1000ms brief)', dur.startsWith('0.9s'), dur);
   const samples = [];
@@ -129,7 +130,7 @@ for (const [label, cfg, expectSwitch] of [
   await ctx.close(); }
 
 // ---- 6. mobile positioning + links
-{ const { ctx, page } = await mk({ viewport: { width: 390, height: 844 } }); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk({ viewport: { width: 390, height: 844 } }); await freeze(page); await go(page, url(TWO));
   const r0 = await rect(page, POLO);
   ok('mobile: polo sits at its mobile position (50%, 80.5%)', Math.abs(r0.cx - 50) < 0.3 && Math.abs(r0.cy - 80.5) < 0.3, JSON.stringify(r0));
   await page.clock.runFor(4100);
@@ -137,14 +138,14 @@ for (const [label, cfg, expectSwitch] of [
   ok('mobile: same position after the switch', same(r0, await rect(page, POLO)));
   ok('mobile: no horizontal overflow', await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth));
   await ctx.close(); }
-{ const { ctx, page } = await mk(); await freeze(page); await page.goto(url(TWO), { waitUntil: 'networkidle' });
+{ const { ctx, page } = await mk(); await freeze(page); await go(page, url(TWO));
   await page.clock.runFor(4100);
   const r = await rect(page, POLO); const s = await page.evaluate(() => { const x = document.querySelector('[data-iz-stage]').getBoundingClientRect(); return { x: x.left, y: x.top, w: x.width, h: x.height }; });
   await Promise.all([page.waitForURL('**/products/' + SHOES), page.mouse.click(s.x + (r.cx / 100) * s.w, s.y + (r.cy / 100) * s.h)]);
   ok('clicking the switched product opens the product the owner picked', page.url().endsWith('/products/' + SHOES), page.url()); await ctx.close(); }
 
 // ---- 7. the placement editor is unaffected, and never shows the swap
-{ const { ctx, page, errors } = await mk({ permissions: ['clipboard-read', 'clipboard-write'] }); await freeze(page); await page.goto(url(TWO, '&izaven-editor=1'), { waitUntil: 'networkidle' }); await page.waitForSelector('.ized [data-list]');
+{ const { ctx, page, errors } = await mk({ permissions: ['clipboard-read', 'clipboard-write'] }); await freeze(page); await go(page, url(TWO, '&izaven-editor=1')); await page.waitForSelector('.ized [data-list]');
   await page.clock.runFor(30000);
   ok('editor: products never swap while you edit', (await shown(page, POLO)).cur === POLO && (await shown(page, PANTS)).cur === PANTS);
   ok('editor: only the original is visible', await page.evaluate(() => [...document.querySelectorAll('.iz-sw__slide:not(.is-current)')].every((s) => getComputedStyle(s).display === 'none')));
