@@ -27,7 +27,7 @@ Keyboard: arrows nudge 0.1% (Shift: 1%), `+`/`-` resize, `[` / `]` change layer,
 
 ## Resizing and moving a product from the theme editor (saves automatically)
 
-In **Home → Studio showroom → Add block → Adjust product size and position**:
+In **Home → Studio showroom → Add block → Product size/position**:
 
 1. **Product on the studio:** pick a product that is already placed.
 2. **Desktop** and **Mobile** each have their own **Size** (30–250%), **Move left / right** and **Move up / down** (±25% of the studio), **Rotate** (±45°) and a **Hide** checkbox.
