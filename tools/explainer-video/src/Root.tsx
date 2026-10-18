@@ -7,6 +7,7 @@ import "@fontsource/inter/700.css";
 import "@fontsource/inter/800.css";
 import { Composition, continueRender, delayRender } from "remotion";
 import { IzavenExplainer } from "./Composition";
+import { Campaign, CAMPAIGN_FRAMES } from "./Campaign";
 
 const handle = delayRender("fonts");
 Promise.all(
@@ -14,5 +15,8 @@ Promise.all(
 ).then(() => continueRender(handle));
 
 export const RemotionRoot: React.FC = () => (
-  <Composition id="IzavenExplainer" component={IzavenExplainer} durationInFrames={1200} fps={30} width={1920} height={1080} />
+  <>
+    <Composition id="IzavenExplainer" component={IzavenExplainer} durationInFrames={1200} fps={30} width={1920} height={1080} />
+    <Composition id="IzavenCampaign" component={Campaign} durationInFrames={CAMPAIGN_FRAMES} fps={30} width={1080} height={1920} />
+  </>
 );
