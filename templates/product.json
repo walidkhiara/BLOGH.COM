@@ -9,7 +9,7 @@
         "usp": {
           "type": "usp",
           "settings": {
-            "line_1": "Made to order and shipped to your door",
+            "line_1": "Made to order · delivery in 5–7 business days",
             "line_2": "14-day returns with a free return label",
             "line_3": "See the fit notes in the description"
           }
@@ -19,7 +19,7 @@
           "type": "accordion",
           "settings": {
             "heading": "Delivery & returns",
-            "content": "<p>Every piece is made to order after you buy it. Delivery options, prices and estimated times for your address are shown at checkout.</p><p>You can return unworn items within 14 days of delivery, and we provide a free return label. Read the full <a href=\"/policies/shipping-policy\">shipping policy</a> and <a href=\"/policies/refund-policy\">refund policy</a>, or <a href=\"/pages/contact\">contact us</a>.</p>"
+            "content": "<p>Every piece is made to order after you buy it. Estimated delivery is 5–7 business days. Shipping options and prices for your address are shown at checkout.</p><p>You can return unworn items within 14 days of delivery, and we provide a free return label. Read the full <a href=\"/policies/shipping-policy\">shipping policy</a> and <a href=\"/policies/refund-policy\">refund policy</a>, or <a href=\"/pages/contact\">contact us</a>.</p>"
           }
         }
       },
