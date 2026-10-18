@@ -60,7 +60,7 @@
     "settings": [
       { "type": "select", "id": "cart_type", "label": "Cart type", "default": "drawer",
         "options": [ { "value": "drawer", "label": "Drawer" }, { "value": "page", "label": "Page" } ] },
-      { "type": "text", "id": "free_shipping_threshold", "label": "Free delivery threshold", "default": "", "info": "In the store currency. Only set this if you've created a matching free-shipping rate in Shopify; leave empty to hide the progress bar." }
+      { "type": "text", "id": "free_shipping_threshold", "label": "Free delivery threshold", "info": "In the store currency. Only set this if you've created a matching free-shipping rate in Shopify; leave empty to hide the progress bar." }
     ]
   },
   {
