@@ -24,7 +24,28 @@
     {%- if meta_description != blank -%}
       <meta name="description" content="{{ meta_description | strip_html | strip_newlines | escape | truncate: 300 }}">
     {%- endif -%}
-    {%- if template.name == 'search' or template.name == 'cart' or template.directory == 'customers' or template.suffix == 'noindex' -%}
+    {%- liquid
+      assign seo_hidden = false
+      case request.page_type
+        when 'product'
+          if product.metafields.seo.hidden == 1
+            assign seo_hidden = true
+          endif
+        when 'collection'
+          if collection.metafields.seo.hidden == 1
+            assign seo_hidden = true
+          endif
+        when 'page'
+          if page.metafields.seo.hidden == 1
+            assign seo_hidden = true
+          endif
+        when 'article'
+          if article.metafields.seo.hidden == 1
+            assign seo_hidden = true
+          endif
+      endcase
+    -%}
+    {%- if seo_hidden or template.name == 'search' or template.name == 'cart' or template.directory == 'customers' or template.suffix == 'noindex' -%}
       <meta name="robots" content="noindex, follow">
     {%- endif -%}
 
