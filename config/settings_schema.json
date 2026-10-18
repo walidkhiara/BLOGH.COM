@@ -10,73 +10,295 @@
   {
     "name": "Brand",
     "settings": [
-      { "type": "image_picker", "id": "logo", "label": "Logo image", "info": "Leave empty to use the bundled IZAVEN lockup." },
-      { "type": "range", "id": "logo_width", "label": "Logo width", "min": 60, "max": 240, "step": 4, "unit": "px", "default": 132 },
-      { "type": "image_picker", "id": "favicon", "label": "Favicon", "info": "Defaults to the IZAVEN mark." },
-      { "type": "checkbox", "id": "intro_enabled", "label": "Play logo reveal on first visit", "default": true, "info": "Once per browser session. Skippable; never shown to visitors who prefer reduced motion." }
+      {
+        "type": "image_picker",
+        "id": "logo",
+        "label": "Logo image",
+        "info": "Leave empty to use the bundled IZAVEN lockup."
+      },
+      {
+        "type": "range",
+        "id": "logo_width",
+        "label": "Logo width",
+        "min": 60,
+        "max": 240,
+        "step": 4,
+        "unit": "px",
+        "default": 132
+      },
+      {
+        "type": "image_picker",
+        "id": "favicon",
+        "label": "Favicon",
+        "info": "Defaults to the IZAVEN mark."
+      },
+      {
+        "type": "checkbox",
+        "id": "intro_enabled",
+        "label": "Play logo reveal on first visit",
+        "default": true,
+        "info": "Once per browser session. Skippable; never shown to visitors who prefer reduced motion."
+      }
+    ]
+  },
+  {
+    "name": "SEO & sharing",
+    "settings": [
+      {
+        "type": "text",
+        "id": "seo_tagline",
+        "label": "Brand tagline",
+        "default": "Performance sportswear & training apparel",
+        "info": "Used as the homepage's hidden main heading when the hero has no heading, and in search results structured data."
+      },
+      {
+        "type": "textarea",
+        "id": "seo_home_description",
+        "label": "Fallback meta description",
+        "default": "IZAVEN performance sportswear for men and women: compression rash guards, leggings, sports bras, shorts, hoodies and trainers. Made to order, with 14-day returns.",
+        "info": "Used on any page without its own description (set the homepage one in Online Store → Preferences to override)."
+      },
+      {
+        "type": "image_picker",
+        "id": "share_image",
+        "label": "Default social share image",
+        "info": "1200×630 recommended. Shown when a page has no image of its own."
+      },
+      {
+        "type": "text",
+        "id": "seo_same_as",
+        "label": "Social profile URLs for Google",
+        "info": "Leave empty to use the Social media URLs below."
+      }
     ]
   },
   {
     "name": "Colors",
     "settings": [
-      { "type": "color", "id": "color_background", "label": "Background", "default": "#ffffff" },
-      { "type": "color", "id": "color_text", "label": "Text", "default": "#0b0b0c" },
-      { "type": "color", "id": "color_surface", "label": "Surface (image backgrounds, panels)", "default": "#f2f2f2" },
-      { "type": "color", "id": "color_muted", "label": "Muted text", "default": "#6e6e73" },
-      { "type": "color", "id": "color_border", "label": "Borders", "default": "#e3e3e3" },
-      { "type": "color", "id": "color_accent", "label": "Campaign accent", "default": "#d7ff3a", "info": "Used sparingly: badges, campaign slashes, focus." },
-      { "type": "color", "id": "color_accent_text", "label": "Text on accent", "default": "#0b0b0c" },
-      { "type": "color", "id": "color_sale", "label": "Sale price", "default": "#c8102e" }
+      {
+        "type": "color",
+        "id": "color_background",
+        "label": "Background",
+        "default": "#ffffff"
+      },
+      {
+        "type": "color",
+        "id": "color_text",
+        "label": "Text",
+        "default": "#0b0b0c"
+      },
+      {
+        "type": "color",
+        "id": "color_surface",
+        "label": "Surface (image backgrounds, panels)",
+        "default": "#f2f2f2"
+      },
+      {
+        "type": "color",
+        "id": "color_muted",
+        "label": "Muted text",
+        "default": "#6e6e73"
+      },
+      {
+        "type": "color",
+        "id": "color_border",
+        "label": "Borders",
+        "default": "#e3e3e3"
+      },
+      {
+        "type": "color",
+        "id": "color_accent",
+        "label": "Campaign accent",
+        "default": "#d7ff3a",
+        "info": "Used sparingly: badges, campaign slashes, focus."
+      },
+      {
+        "type": "color",
+        "id": "color_accent_text",
+        "label": "Text on accent",
+        "default": "#0b0b0c"
+      },
+      {
+        "type": "color",
+        "id": "color_sale",
+        "label": "Sale price",
+        "default": "#c8102e"
+      }
     ]
   },
   {
     "name": "Typography",
     "settings": [
-      { "type": "font_picker", "id": "type_heading_font", "label": "Heading font", "default": "archivo_n7" },
-      { "type": "select", "id": "heading_weight", "label": "Heading weight", "default": "800",
-        "options": [ { "value": "600", "label": "Semibold" }, { "value": "700", "label": "Bold" }, { "value": "800", "label": "Extra bold" }, { "value": "900", "label": "Black" } ] },
-      { "type": "font_picker", "id": "type_body_font", "label": "Body font", "default": "inter_n4" }
+      {
+        "type": "font_picker",
+        "id": "type_heading_font",
+        "label": "Heading font",
+        "default": "archivo_n7"
+      },
+      {
+        "type": "select",
+        "id": "heading_weight",
+        "label": "Heading weight",
+        "default": "800",
+        "options": [
+          {
+            "value": "600",
+            "label": "Semibold"
+          },
+          {
+            "value": "700",
+            "label": "Bold"
+          },
+          {
+            "value": "800",
+            "label": "Extra bold"
+          },
+          {
+            "value": "900",
+            "label": "Black"
+          }
+        ]
+      },
+      {
+        "type": "font_picker",
+        "id": "type_body_font",
+        "label": "Body font",
+        "default": "inter_n4"
+      }
     ]
   },
   {
     "name": "Layout",
     "settings": [
-      { "type": "range", "id": "page_width", "label": "Max content width", "min": 1200, "max": 1920, "step": 40, "unit": "px", "default": 1600 }
+      {
+        "type": "range",
+        "id": "page_width",
+        "label": "Max content width",
+        "min": 1200,
+        "max": 1920,
+        "step": 40,
+        "unit": "px",
+        "default": 1600
+      }
     ]
   },
   {
     "name": "Product cards",
     "settings": [
-      { "type": "select", "id": "card_ratio", "label": "Image ratio", "default": "portrait",
-        "options": [ { "value": "portrait", "label": "Portrait 4:5" }, { "value": "tall", "label": "Tall 3:4" }, { "value": "square", "label": "Square" } ] },
-      { "type": "checkbox", "id": "card_secondary_image", "label": "Show second image on hover", "default": true },
-      { "type": "checkbox", "id": "card_swatches", "label": "Show colour swatches", "default": true },
-      { "type": "text", "id": "color_option_names", "label": "Colour option names", "default": "Color,Colour", "info": "Comma separated. Variant options with these names render as swatches." },
-      { "type": "text", "id": "new_badge_tag", "label": "Tag that shows the NEW badge", "default": "new" }
+      {
+        "type": "select",
+        "id": "card_ratio",
+        "label": "Image ratio",
+        "default": "portrait",
+        "options": [
+          {
+            "value": "portrait",
+            "label": "Portrait 4:5"
+          },
+          {
+            "value": "tall",
+            "label": "Tall 3:4"
+          },
+          {
+            "value": "square",
+            "label": "Square"
+          }
+        ]
+      },
+      {
+        "type": "checkbox",
+        "id": "card_secondary_image",
+        "label": "Show second image on hover",
+        "default": true
+      },
+      {
+        "type": "checkbox",
+        "id": "card_swatches",
+        "label": "Show colour swatches",
+        "default": true
+      },
+      {
+        "type": "text",
+        "id": "color_option_names",
+        "label": "Colour option names",
+        "default": "Color,Colour",
+        "info": "Comma separated. Variant options with these names render as swatches."
+      },
+      {
+        "type": "text",
+        "id": "new_badge_tag",
+        "label": "Tag that shows the NEW badge",
+        "default": "new"
+      }
     ]
   },
   {
     "name": "Cart",
     "settings": [
-      { "type": "select", "id": "cart_type", "label": "Cart type", "default": "drawer",
-        "options": [ { "value": "drawer", "label": "Drawer" }, { "value": "page", "label": "Page" } ] },
-      { "type": "text", "id": "free_shipping_threshold", "label": "Free delivery threshold", "info": "In the store currency. Only set this if you've created a matching free-shipping rate in Shopify; leave empty to hide the progress bar." }
+      {
+        "type": "select",
+        "id": "cart_type",
+        "label": "Cart type",
+        "default": "drawer",
+        "options": [
+          {
+            "value": "drawer",
+            "label": "Drawer"
+          },
+          {
+            "value": "page",
+            "label": "Page"
+          }
+        ]
+      },
+      {
+        "type": "text",
+        "id": "free_shipping_threshold",
+        "label": "Free delivery threshold",
+        "info": "In the store currency. Only set this if you've created a matching free-shipping rate in Shopify; leave empty to hide the progress bar."
+      }
     ]
   },
   {
     "name": "Social media",
     "settings": [
-      { "type": "text", "id": "social_instagram", "label": "Instagram URL" },
-      { "type": "text", "id": "social_tiktok", "label": "TikTok URL" },
-      { "type": "text", "id": "social_youtube", "label": "YouTube URL" },
-      { "type": "text", "id": "social_facebook", "label": "Facebook URL" },
-      { "type": "text", "id": "social_x", "label": "X URL" }
+      {
+        "type": "text",
+        "id": "social_instagram",
+        "label": "Instagram URL"
+      },
+      {
+        "type": "text",
+        "id": "social_tiktok",
+        "label": "TikTok URL"
+      },
+      {
+        "type": "text",
+        "id": "social_youtube",
+        "label": "YouTube URL"
+      },
+      {
+        "type": "text",
+        "id": "social_facebook",
+        "label": "Facebook URL"
+      },
+      {
+        "type": "text",
+        "id": "social_x",
+        "label": "X URL"
+      }
     ]
   },
   {
     "name": "Motion",
     "settings": [
-      { "type": "checkbox", "id": "reveal_on_scroll", "label": "Reveal sections on scroll", "default": true, "info": "Always disabled for visitors who prefer reduced motion." }
+      {
+        "type": "checkbox",
+        "id": "reveal_on_scroll",
+        "label": "Reveal sections on scroll",
+        "default": true,
+        "info": "Always disabled for visitors who prefer reduced motion."
+      }
     ]
   }
 ]

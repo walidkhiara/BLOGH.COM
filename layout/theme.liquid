@@ -12,18 +12,24 @@
     {%- else -%}
       <link rel="icon" type="image/png" href="{{ 'izaven-mark.png' | asset_url }}">
     {%- endif -%}
+    <link rel="apple-touch-icon" href="{{ 'izaven-mark.png' | asset_url }}">
 
     <title>
-      {{ page_title }}
-      {%- if current_tags %} &ndash; {{ current_tags | join: ', ' }}{% endif -%}
+      {{ page_title | escape }}
+      {%- if current_tags %} &ndash; {{ current_tags | join: ', ' | escape }}{% endif -%}
       {%- if current_page != 1 %} &ndash; {{ 'general.page' | t: page: current_page }}{% endif -%}
       {%- unless page_title contains shop.name %} &ndash; {{ shop.name }}{% endunless -%}
     </title>
-    {%- if page_description -%}
-      <meta name="description" content="{{ page_description | escape }}">
+    {%- assign meta_description = page_description | default: settings.seo_home_description -%}
+    {%- if meta_description != blank -%}
+      <meta name="description" content="{{ meta_description | strip_html | strip_newlines | escape | truncate: 300 }}">
+    {%- endif -%}
+    {%- if template.name == 'search' or template.name == 'cart' or template.directory == 'customers' or template.suffix == 'noindex' -%}
+      <meta name="robots" content="noindex, follow">
     {%- endif -%}
 
     {% render 'meta-tags' %}
+    {% render 'structured-data' %}
     {% render 'theme-styles' %}
 
     {{ 'base.css' | asset_url | stylesheet_tag }}

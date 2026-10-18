@@ -38,7 +38,8 @@
   {%- if video -%}{% render 'video-toggle' %}{%- endif -%}
   <div class="hero__content">
     {%- if s.eyebrow != blank -%}<p class="eyebrow"><span class="slash" aria-hidden="true"></span>{{ s.eyebrow | escape }}</p>{%- endif -%}
-    {%- if s.heading != blank -%}<h1 class="hero__heading h-display">{{ s.heading | escape | newline_to_br }}</h1>{%- endif -%}
+    {%- if s.heading != blank -%}<h1 class="hero__heading h-display">{%- if template.name == 'index' -%}<span class="visually-hidden">{{ shop.name | escape }} – </span>{%- endif -%}{{ s.heading | escape | newline_to_br }}</h1>
+    {%- elsif template.name == 'index' -%}<h1 class="visually-hidden">{{ shop.name | escape }} – {{ settings.seo_tagline | escape }}</h1>{%- endif -%}
     {%- if s.text != blank -%}<div class="hero__text">{{ s.text }}</div>{%- endif -%}
     {%- if s.button_label != blank or s.button_label_2 != blank -%}
       <div class="hero__actions">

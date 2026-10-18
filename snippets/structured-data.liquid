@@ -1,0 +1,64 @@
+{%- comment -%} Organization + WebSite (homepage) and BreadcrumbList (product / collection). Product schema lives in main-product. {%- endcomment -%}
+{%- liquid
+  assign same_as = settings.seo_same_as | split: ','
+  if settings.seo_same_as == blank
+    assign same_as = settings.social_instagram | append: ',' | append: settings.social_tiktok | append: ',' | append: settings.social_youtube | append: ',' | append: settings.social_facebook | append: ',' | append: settings.social_x | split: ','
+  endif
+-%}
+{%- if request.page_type == 'index' -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "Organization",
+      "@id": {{ request.origin | append: '/#organization' | json }},
+      "name": {{ shop.name | json }},
+      "url": {{ request.origin | append: routes.root_url | json }},
+      "logo": {{ 'izaven-logo-black.png' | asset_url | prepend: 'https:' | json }},
+      "description": {{ settings.seo_home_description | json }}
+      {%- assign first = true -%}
+      {%- for u in same_as -%}{%- assign t = u | strip -%}{%- if t != blank -%}{%- if first -%},"sameAs": [{%- assign first = false -%}{%- else -%},{%- endif -%}{{ t | json }}{%- endif -%}{%- endfor -%}{%- unless first -%}]{%- endunless -%}
+      {%- if shop.email != blank -%},"contactPoint": { "@type": "ContactPoint", "contactType": "customer support", "email": {{ shop.email | json }} }{%- endif -%}
+    },
+    {
+      "@type": "WebSite",
+      "@id": {{ request.origin | append: '/#website' | json }},
+      "name": {{ shop.name | json }},
+      "url": {{ request.origin | append: routes.root_url | json }},
+      "publisher": { "@id": {{ request.origin | append: '/#organization' | json }} },
+      "potentialAction": {
+        "@type": "SearchAction",
+        "target": { "@type": "EntryPoint", "urlTemplate": {{ request.origin | append: routes.search_url | append: '?q={search_term_string}' | json }} },
+        "query-input": "required name=search_term_string"
+      }
+    }
+  ]
+}
+</script>
+{%- elsif request.page_type == 'product' or request.page_type == 'collection' -%}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "BreadcrumbList",
+  "itemListElement": [
+    { "@type": "ListItem", "position": 1, "name": "Home", "item": {{ request.origin | append: routes.root_url | json }} }
+    {%- if request.page_type == 'collection' -%}
+    ,{ "@type": "ListItem", "position": 2, "name": {{ collection.title | json }}, "item": {{ request.origin | append: collection.url | json }} }
+    {%- else -%}
+      {%- assign crumb = collection -%}
+      {%- unless crumb -%}
+        {%- for c in product.collections -%}{%- if c.handle == 'women' or c.handle == 'men' -%}{%- assign crumb = c -%}{%- break -%}{%- endif -%}{%- endfor -%}
+      {%- endunless -%}
+      {%- assign crumb = crumb | default: product.collections.first -%}
+      {%- if crumb -%}
+    ,{ "@type": "ListItem", "position": 2, "name": {{ crumb.title | json }}, "item": {{ request.origin | append: crumb.url | json }} }
+    ,{ "@type": "ListItem", "position": 3, "name": {{ product.title | json }}, "item": {{ request.origin | append: product.url | json }} }
+      {%- else -%}
+    ,{ "@type": "ListItem", "position": 2, "name": {{ product.title | json }}, "item": {{ request.origin | append: product.url | json }} }
+      {%- endif -%}
+    {%- endif -%}
+  ]
+}
+</script>
+{%- endif -%}
