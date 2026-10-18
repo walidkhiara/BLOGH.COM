@@ -6,12 +6,24 @@
         "title": { "type": "title" },
         "picker": { "type": "variant_picker" },
         "buy": { "type": "buy_buttons", "settings": { "show_quantity": true, "low_stock": 5 } },
-        "usp": { "type": "usp" },
+        "usp": {
+          "type": "usp",
+          "settings": {
+            "line_1": "Made to order and shipped to your door",
+            "line_2": "14-day returns with a free return label",
+            "line_3": "See the fit notes in the description"
+          }
+        },
         "desc": { "type": "description", "settings": { "open": true } },
-        "delivery": { "type": "accordion", "settings": { "heading": "Delivery & returns", "content": "<p>Standard delivery 2–4 working days, free over $75. Express next working day when ordered before 2pm. Returns are free within 30 days of delivery.</p>" } },
-        "care": { "type": "accordion", "settings": { "heading": "Fabric & care", "content": "<p>Machine wash cold, inside out. Do not tumble dry or iron the print. See the product description for composition.</p>" } }
+        "delivery": {
+          "type": "accordion",
+          "settings": {
+            "heading": "Delivery & returns",
+            "content": "<p>Every piece is made to order after you buy it. Delivery options, prices and estimated times for your address are shown at checkout.</p><p>You can return unworn items within 14 days of delivery, and we provide a free return label. Read the full <a href=\"/policies/shipping-policy\">shipping policy</a> and <a href=\"/policies/refund-policy\">refund policy</a>, or <a href=\"/pages/contact\">contact us</a>.</p>"
+          }
+        }
       },
-      "block_order": ["title", "picker", "buy", "usp", "desc", "delivery", "care"],
+      "block_order": ["title", "picker", "buy", "usp", "desc", "delivery"],
       "settings": {}
     },
     "related": { "type": "related-products", "settings": {} }

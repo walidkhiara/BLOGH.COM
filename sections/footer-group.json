@@ -5,9 +5,9 @@
     "newsletter": {
       "type": "newsletter",
       "settings": {
-        "eyebrow": "Members first",
-        "heading": "Early access. Every drop.",
-        "text": "<p>Sign up for launch alerts, training guides and members-only pricing. No spam, unsubscribe anytime.</p>",
+        "eyebrow": "Stay in the loop",
+        "heading": "First to know. Every drop.",
+        "text": "<p>Get first word on new pieces. No spam, unsubscribe anytime.</p>",
         "style": "dark"
       }
     },
@@ -18,7 +18,10 @@
         "c2": { "type": "menu", "settings": { "title": "Help", "menu": "footer" } }
       },
       "block_order": ["c1", "c2"],
-      "settings": {}
+      "settings": {
+        "blurb": "Training apparel, made to order.",
+        "legal_menu": "legal"
+      }
     }
   },
   "order": ["newsletter", "footer"]

@@ -16,14 +16,14 @@
     <div class="hero__scrim" aria-hidden="true" style="--scrim:.5"></div>
     <div class="collection-hero__content">
       <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a><span>/</span><span aria-current="page">{{ collection.title | escape }}</span></nav>
-      <h1 class="h-xl">{{ collection.title | escape }}</h1>
+      <h1 class="h-xl">{{ collection.title | escape }}{% if current_tags %} <span style="opacity:.6">/ {{ current_tags | join: ', ' | escape }}</span>{% endif %}</h1>
       {%- if collection.description != blank and s.show_description -%}<div class="collection-hero__desc rte">{{ collection.description }}</div>{%- endif -%}
     </div>
   </div>
 {%- else -%}
   <div class="page-width collection-head">
     <nav class="breadcrumbs" aria-label="Breadcrumb"><a href="{{ routes.root_url }}">{{ 'general.home' | t }}</a><span>/</span><span aria-current="page">{{ collection.title | escape }}</span></nav>
-    <h1 class="h-xl">{{ collection.title | escape }}</h1>
+    <h1 class="h-xl">{{ collection.title | escape }}{% if current_tags %} <span style="opacity:.6">/ {{ current_tags | join: ', ' | escape }}</span>{% endif %}</h1>
     {%- if collection.description != blank and s.show_description -%}<div class="rte muted" style="max-width:60ch">{{ collection.description }}</div>{%- endif -%}
   </div>
 {%- endif -%}

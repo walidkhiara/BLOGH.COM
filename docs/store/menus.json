@@ -1,0 +1,240 @@
+{
+ "main": [
+  {
+   "title": "Women",
+   "type": "COLLECTION",
+   "resourceId": "gid://shopify/Collection/707519906117",
+   "items": [
+    {
+     "title": "Clothing",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519906117",
+     "items": [
+      {
+       "title": "Leggings",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519906117",
+       "tags": [
+        "leggings"
+       ]
+      },
+      {
+       "title": "Shorts",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519906117",
+       "tags": [
+        "shorts"
+       ]
+      },
+      {
+       "title": "Tops",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519906117",
+       "tags": [
+        "tops"
+       ]
+      },
+      {
+       "title": "Hoodies",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519906117",
+       "tags": [
+        "hoodies"
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Footwear",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519906117",
+     "tags": [
+      "shoes"
+     ],
+     "items": [
+      {
+       "title": "Shoes",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519906117",
+       "tags": [
+        "shoes"
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Shop by activity",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519906117",
+     "items": [
+      {
+       "title": "Running",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519971653"
+      },
+      {
+       "title": "Training",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707520004421"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Men",
+   "type": "COLLECTION",
+   "resourceId": "gid://shopify/Collection/707519938885",
+   "items": [
+    {
+     "title": "Clothing",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519938885",
+     "items": [
+      {
+       "title": "Leggings",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519938885",
+       "tags": [
+        "leggings"
+       ]
+      },
+      {
+       "title": "Shorts",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519938885",
+       "tags": [
+        "shorts"
+       ]
+      },
+      {
+       "title": "Tops",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519938885",
+       "tags": [
+        "tops"
+       ]
+      },
+      {
+       "title": "Hoodies",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519938885",
+       "tags": [
+        "hoodies"
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Footwear",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519938885",
+     "tags": [
+      "shoes"
+     ],
+     "items": [
+      {
+       "title": "Shoes",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519938885",
+       "tags": [
+        "shoes"
+       ]
+      }
+     ]
+    },
+    {
+     "title": "Shop by activity",
+     "type": "COLLECTION",
+     "resourceId": "gid://shopify/Collection/707519938885",
+     "items": [
+      {
+       "title": "Running",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707519971653"
+      },
+      {
+       "title": "Training",
+       "type": "COLLECTION",
+       "resourceId": "gid://shopify/Collection/707520004421"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "title": "Running",
+   "type": "COLLECTION",
+   "resourceId": "gid://shopify/Collection/707519971653"
+  },
+  {
+   "title": "Training",
+   "type": "COLLECTION",
+   "resourceId": "gid://shopify/Collection/707520004421"
+  },
+  {
+   "title": "New arrivals",
+   "type": "COLLECTION",
+   "resourceId": "gid://shopify/Collection/707520037189"
+  }
+ ],
+ "footer": [
+  {
+   "title": "Track your order",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/pages/track-your-order"
+  },
+  {
+   "title": "Contact us",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/pages/contact"
+  },
+  {
+   "title": "Shipping & delivery",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/shipping-policy"
+  },
+  {
+   "title": "Returns & refunds",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/refund-policy"
+  },
+  {
+   "title": "Your privacy choices",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/pages/data-sharing-opt-out"
+  }
+ ],
+ "legal": [
+  {
+   "title": "Terms of service",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/terms-of-service"
+  },
+  {
+   "title": "Privacy policy",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/privacy-policy"
+  },
+  {
+   "title": "Refund policy",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/refund-policy"
+  },
+  {
+   "title": "Shipping policy",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/shipping-policy"
+  },
+  {
+   "title": "Legal notice",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/legal-notice"
+  },
+  {
+   "title": "Contact information",
+   "type": "HTTP",
+   "url": "https://www.izaven.com/policies/contact-information"
+  }
+ ]
+}

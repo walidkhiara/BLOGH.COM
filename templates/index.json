@@ -3,11 +3,15 @@
     "hero": {
       "type": "hero-banner",
       "settings": {
-        "eyebrow": "SS26 / Velocity",
-        "heading": "Built for the\nhard sets",
-        "text": "<p>Second-skin compression and sweat-mapped mesh, cut for lifting, running and everything in between.</p>",
+        "video": "shopify://files/videos/Models_wearing_apparel_in_studio_20261018053101.mp4",
+        "video_mobile": "shopify://files/videos/Models_wearing_apparel_in_studio_20261018053101.mp4",
+        "eyebrow": "The IZAVEN range",
+        "heading": "your prime",
+        "text": "<p>Second-skin compression and four-way stretch, cut for lifting, running and everything in between.</p>",
         "button_label": "Shop women",
+        "button_link": "shopify://collections/women",
         "button_label_2": "Shop men",
+        "button_link_2": "shopify://collections/men",
         "position": "bottom-left",
         "text_color": "#ffffff",
         "overlay": 40,
@@ -18,20 +22,48 @@
     "tiles": {
       "type": "collection-tiles",
       "blocks": {
-        "t1": { "type": "tile", "settings": { "eyebrow": "Women", "title": "Train in it", "cta": "Shop women" } },
-        "t2": { "type": "tile", "settings": { "eyebrow": "Men", "title": "Lift in it", "cta": "Shop men" } }
+        "t1": {
+          "type": "tile",
+          "settings": {
+            "collection": "women",
+            "video": "shopify://files/videos/IZAVEN_sportswear_campaign_video_1080p_20261018051701.mp4",
+            "eyebrow": "Women",
+            "title": "Train in it",
+            "cta": "Shop women",
+            "link": "shopify://collections/women"
+          }
+        },
+        "t2": {
+          "type": "tile",
+          "settings": {
+            "collection": "men",
+            "video": "shopify://files/videos/Models_wearing_compression_shirt_1080p_20261018053630.mp4",
+            "eyebrow": "Men",
+            "title": "Lift in it",
+            "cta": "Shop men",
+            "link": "shopify://collections/men"
+          }
+        }
       },
       "block_order": ["t1", "t2"],
-      "settings": { "edge": true, "ratio": "portrait", "padding_top": 4, "padding_bottom": 0 }
+      "settings": {
+        "heading": "",
+        "edge": true,
+        "ratio": "portrait",
+        "padding_top": 4,
+        "padding_bottom": 0
+      }
     },
     "new_arrivals": {
       "type": "featured-collection",
       "settings": {
         "eyebrow": "Just landed",
         "heading": "New arrivals",
+        "collection": "new-arrivals",
         "limit": 12,
         "layout": "carousel",
         "columns": 4,
+        "align": "left",
         "show_view_all": true,
         "padding_top": 72,
         "padding_bottom": 72
@@ -41,27 +73,34 @@
       "type": "campaign-banner",
       "settings": {
         "layout": "split",
+        "image": "shopify://shop_images/Gemini_Generated_Image_3pu4zv3pu4zv3pu4.jpg",
         "index": "01",
-        "eyebrow": "Seamless",
-        "heading": "Zero seams.\nZero limits.",
-        "text": "<p>Knitted in one piece so nothing digs, shifts or rides up mid-set.</p>",
-        "button_label": "Shop seamless",
+        "eyebrow": "Training",
+        "heading": "Four-way stretch.\nFlat seams.",
+        "text": "<p>Fitted leggings, tops and shorts that move with every rep, stride and stretch.</p>",
+        "button_label": "Shop training",
+        "button_link": "shopify://collections/training",
         "button_style": "accent",
         "align": "left",
         "angled": true,
         "panel_color": "#0b0b0c",
         "text_color": "#ffffff",
-        "height": 76
+        "overlay": 40,
+        "height": 76,
+        "padding_top": 0,
+        "padding_bottom": 0
       }
     },
     "bestsellers": {
       "type": "featured-collection",
       "settings": {
-        "eyebrow": "Most worn",
-        "heading": "Best sellers",
+        "eyebrow": "Our picks",
+        "heading": "Featured",
+        "collection": "featured",
         "limit": 8,
         "layout": "grid",
         "columns": 4,
+        "align": "left",
         "show_view_all": true,
         "padding_top": 72,
         "padding_bottom": 72
@@ -71,22 +110,33 @@
       "type": "campaign-banner",
       "settings": {
         "layout": "full",
-        "eyebrow": "Run club",
+        "image": "shopify://shop_images/Gemini_Generated_Image_2cb80m2cb80m2cb8.jpg",
+        "index": "01",
+        "eyebrow": "Running",
         "heading": "Every kilometre\ncounts",
+        "text": "",
         "button_label": "Shop running",
+        "button_link": "shopify://collections/running",
         "button_style": "light",
         "align": "right",
+        "angled": true,
+        "panel_color": "#0b0b0c",
         "text_color": "#ffffff",
         "overlay": 45,
-        "height": 80
+        "height": 80,
+        "padding_top": 0,
+        "padding_bottom": 0
       }
     },
     "editorial": {
       "type": "editorial",
       "settings": {
-        "eyebrow": "The lab",
-        "heading": "Tested in\n400 sessions",
-        "button_label": "How we build",
+        "image": "shopify://shop_images/Gemini_Generated_Image_z57oqbz57oqbz57o.jpg",
+        "eyebrow": "Made to order",
+        "heading": "Printed for you.\nNothing wasted.",
+        "text": "<p>Every IZAVEN piece is made to order after you buy it, so there's no warehouse of unsold stock behind your purchase.</p>",
+        "button_label": "Shop all",
+        "button_link": "shopify://collections/all",
         "reverse": false,
         "padding_top": 96,
         "padding_bottom": 96
