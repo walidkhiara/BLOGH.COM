@@ -1,0 +1,107 @@
+:root {
+  --bg: #0d1117;
+  --panel: #161b22;
+  --text: #e6e1d6;
+  --muted: #8b949e;
+  --accent: #e3b341;
+  --danger: #f85149;
+  --border: #30363d;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(ellipse at top, #1c2533, var(--bg) 60%);
+  color: var(--text);
+  font: 18px/1.65 Georgia, "Times New Roman", serif;
+}
+
+.game {
+  max-width: 1040px;
+  margin: 0 auto;
+  padding: 24px 16px;
+  display: grid;
+  grid-template-columns: 1fr 260px;
+  grid-template-areas: "hud hud" "scene side";
+  gap: 20px;
+}
+
+.hud {
+  grid-area: hud;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 12px;
+}
+
+.title { margin: 0; font-size: 1.5rem; color: var(--accent); letter-spacing: .02em; }
+.stats { display: flex; gap: 16px; font-family: system-ui, sans-serif; font-size: .95rem; }
+.stat b { color: var(--accent); }
+.stat.low b { color: var(--danger); }
+
+.scene {
+  grid-area: scene;
+  background: var(--panel);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 28px;
+  min-height: 420px;
+}
+
+.chapter {
+  margin: 0 0 8px;
+  font: 600 .75rem/1 system-ui, sans-serif;
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  color: var(--muted);
+}
+
+.text p { margin: 0 0 1em; animation: fade .5s ease both; }
+.text .note { color: var(--accent); font-style: italic; font-size: .92rem; }
+.text .ending-title { font-size: 1.4rem; color: var(--accent); }
+
+@keyframes fade { from { opacity: 0; transform: translateY(4px); } }
+
+.choices { display: grid; gap: 10px; margin-top: 24px; }
+
+.choices button, .controls button {
+  font: inherit;
+  color: var(--text);
+  background: #21262d;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+}
+
+.choices button { text-align: left; padding: 12px 16px; }
+.choices button:hover, .choices button:focus-visible { border-color: var(--accent); background: #2a2f37; outline: none; }
+.choices button .req { color: var(--muted); font-size: .8rem; margin-left: 6px; }
+
+.side {
+  grid-area: side;
+  font-family: system-ui, sans-serif;
+  font-size: .9rem;
+}
+
+.side h2 { font-size: .8rem; text-transform: uppercase; letter-spacing: .1em; color: var(--muted); margin: 0 0 8px; }
+.inventory, .endings { list-style: none; padding: 0; margin: 0 0 20px; }
+.inventory li, .endings li { padding: 4px 0; border-bottom: 1px dashed var(--border); }
+.inventory:empty::after { content: "Empty pockets."; color: var(--muted); }
+.endings li.locked { color: var(--muted); }
+
+.controls { display: flex; gap: 8px; flex-wrap: wrap; }
+.controls button { padding: 6px 12px; font-size: .85rem; }
+
+.toast { min-height: 1.4em; color: var(--accent); }
+
+@media (max-width: 760px) {
+  .game { grid-template-columns: 1fr; grid-template-areas: "hud" "scene" "side"; }
+  .scene { padding: 20px; }
+  body { font-size: 17px; }
+}

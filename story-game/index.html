@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>The Lighthouse at Blackwater</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <main class="game" id="game">
+    <header class="hud">
+      <h1 class="title">The Lighthouse at Blackwater</h1>
+      <div class="stats" aria-label="Your status">
+        <span class="stat" title="Health">❤ <b id="hp">10</b></span>
+        <span class="stat" title="Courage">✦ <b id="courage">0</b></span>
+        <span class="stat" title="Clues found">🔍 <b id="clues">0</b></span>
+      </div>
+    </header>
+
+    <section class="scene" aria-live="polite">
+      <p class="chapter" id="chapter"></p>
+      <div class="text" id="text"></div>
+      <div class="choices" id="choices"></div>
+    </section>
+
+    <aside class="side">
+      <h2>Inventory</h2>
+      <ul id="inventory" class="inventory"></ul>
+      <h2>Endings found <span id="endings-count"></span></h2>
+      <ul id="endings" class="endings"></ul>
+      <div class="controls">
+        <button type="button" id="save">Save</button>
+        <button type="button" id="load">Load</button>
+        <button type="button" id="restart">Restart</button>
+      </div>
+      <p class="toast" id="toast" role="status"></p>
+    </aside>
+  </main>
+  <script src="story.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>
