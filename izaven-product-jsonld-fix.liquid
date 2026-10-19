@@ -1,0 +1,70 @@
+{%- comment -%}
+  IZAVEN – replacement for the Product JSON-LD block at the bottom of sections/main-product.liquid
+  (everything from "{%- liquid assign ld_country" down to the closing </script>, just above {% schema %}).
+  Adds: validFrom, shippingDetails, and an always-present hasMerchantReturnPolicy.
+  CHECK the shipping values below before saving.
+{%- endcomment -%}
+{%- liquid
+  assign ld_country = localization.country.iso_code | default: shop.address.country_code | default: 'US'
+  assign ld_valid = 'now' | date: '%s' | plus: 31536000 | date: '%Y-%m-%d'
+  assign ld_from = product.published_at | default: product.created_at | date: '%Y-%m-%dT%H:%M:%S%z'
+
+  # Shipping shown to Google – based on your Printful "Standard Delivery" US rate. Edit to match your real policy.
+  assign ship_rate = '8.79'
+  assign ship_currency = 'USD'
+  assign handling_min = 2
+  assign handling_max = 5
+  assign transit_min = 3
+  assign transit_max = 10
+-%}
+<script type="application/ld+json">
+  {
+    "@context": "https://schema.org/",
+    "@type": "Product",
+    "@id": {{ request.origin | append: product.url | append: '#product' | json }},
+    "name": {{ product.title | json }},
+    "url": {{ request.origin | append: product.url | json }},
+    {%- if product.images.size > 0 -%}
+    "image": [{%- for image in product.images limit: 6 -%}{{ image | image_url: width: 1200 | prepend: 'https:' | json }}{% unless forloop.last %},{% endunless %}{%- endfor -%}],
+    {%- endif -%}
+    "description": {{ product.description | strip_html | strip_newlines | strip | truncate: 5000 | json }},
+    {%- if product.type != blank -%}"category": {{ product.type | json }},{%- endif -%}
+    "brand": { "@type": "Brand", "name": {{ product.vendor | default: shop.name | json }} },
+    "offers": [
+      {%- for variant in product.variants -%}
+        {
+          "@type": "Offer",
+          {%- if variant.sku != blank -%}"sku": {{ variant.sku | json }},{%- endif -%}
+          {%- if variant.barcode != blank -%}"gtin": {{ variant.barcode | json }},{%- endif -%}
+          "name": {{ product.title | append: ' – ' | append: variant.title | json }},
+          "availability": "https://schema.org/{% if variant.available %}InStock{% else %}OutOfStock{% endif %}",
+          "itemCondition": "https://schema.org/NewCondition",
+          "price": {{ variant.price | divided_by: 100.00 | json }},
+          "priceCurrency": {{ cart.currency.iso_code | json }},
+          "validFrom": {{ ld_from | json }},
+          "priceValidUntil": {{ ld_valid | json }},
+          "url": {{ request.origin | append: variant.url | json }},
+          "seller": { "@type": "Organization", "name": {{ shop.name | json }} },
+          "shippingDetails": {
+            "@type": "OfferShippingDetails",
+            "shippingRate": { "@type": "MonetaryAmount", "value": {{ ship_rate | json }}, "currency": {{ ship_currency | json }} },
+            "shippingDestination": { "@type": "DefinedRegion", "addressCountry": {{ ld_country | json }} },
+            "deliveryTime": {
+              "@type": "ShippingDeliveryTime",
+              "handlingTime": { "@type": "QuantitativeValue", "minValue": {{ handling_min }}, "maxValue": {{ handling_max }}, "unitCode": "DAY" },
+              "transitTime": { "@type": "QuantitativeValue", "minValue": {{ transit_min }}, "maxValue": {{ transit_max }}, "unitCode": "DAY" }
+            }
+          },
+          "hasMerchantReturnPolicy": {
+            "@type": "MerchantReturnPolicy",
+            "applicableCountry": {{ ld_country | json }},
+            "returnPolicyCategory": "https://schema.org/MerchantReturnFiniteReturnWindow",
+            "merchantReturnDays": 14,
+            "returnMethod": "https://schema.org/ReturnByMail",
+            "returnFees": "https://schema.org/FreeReturn"
+          }
+        }{% unless forloop.last %},{% endunless %}
+      {%- endfor -%}
+    ]
+  }
+</script>
