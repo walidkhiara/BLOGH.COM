@@ -1,0 +1,14 @@
+{
+  "_note": "Look of the animated character, matched to kiara's reference videos (curly dark hair, dark-framed glasses, fitted dark tee, light grey sweatpants).",
+  "height": 1.0,
+  "build": 1.0,
+  "skin": "#a87252",
+  "eyes": "#3b2416",
+  "hair": "#140d09",
+  "hairVolume": 1.0,
+  "lips": "#7a4a40",
+  "glasses": "#141414",
+  "top": "#151a26",
+  "pants": "#6c6d70",
+  "shoes": "#2a2a2e"
+}

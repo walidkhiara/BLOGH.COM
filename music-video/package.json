@@ -1,0 +1,13 @@
+{
+  "name": "music-video",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "render": "node render.mjs",
+    "stills": "node render.mjs --stills"
+  },
+  "dependencies": {
+    "playwright-core": "1.56.1",
+    "three": "0.169.0"
+  }
+}
